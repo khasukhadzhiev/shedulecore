@@ -1,0 +1,45 @@
+version: '3.9'
+
+networks:
+    postgres:
+        external: false
+volumes:
+  postgres_data:
+services:
+  coreapi:
+    image: image_schedule_api 
+    container_name: container_schedule_api
+    build:
+      context: .
+      dockerfile: CoreAPI/Dockerfile
+    depends_on: 
+      - "postgres"
+      - "web-ui"
+    ports:
+      - "9090:9090"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:9090
+  postgres:
+    container_name: postgres_container
+    image: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: "0900"
+      PGDATA: /data/postgres
+      POSTGRES_HOST_AUTH_METHOD: trust
+    volumes:
+       - postgres_data
+    ports:
+      - "5432:5432"
+    networks:
+      - postgres
+    restart: unless-stopped
+  web-ui:
+    image: image_schedule_webui
+    build: 
+      context: ./WebUI
+      dockerfile: Dockerfile
+    container_name: container_schedule_webui
+    ports:
+      - "8080:80"

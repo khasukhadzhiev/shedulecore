@@ -40,7 +40,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddControllers();
 
-builder.Services.AddDbContext<ScheduleHighSchoolDb>(options => options.UseNpgsql(builder.Configuration.GetConnectionString("PostgresConnectionString"), b => b.MigrationsAssembly("DAL")));
+builder.Services.AddDbContext<ScheduleHighSchoolDb>(options => options.UseNpgsql(builder.Configuration.GetConnectionString("PostgresConnectionStringDocker"), b => b.MigrationsAssembly("DAL")));
 
 //builder.Services.AddDbContext<ScheduleHighSchoolDb>(options => options.UseSqlServer("TimetableHighSchoolDbConnectionMSSqlServerDocker"), ServiceLifetime.Transient);
 
@@ -100,7 +100,7 @@ if (app.Environment.IsDevelopment())
     app.UseDeveloperExceptionPage();
 }
 
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 
 app.UseRouting();
 

@@ -7,7 +7,6 @@ RUN apt-get install -y libgdiplus
 RUN apt-get install -y libc6-dev
 RUN ln -s /usr/lib/libgdiplus.so /usr/lib/gdiplus.dll
 WORKDIR /app
-EXPOSE 9090
 
 FROM mcr.microsoft.com/dotnet/sdk:7.0 AS build
 WORKDIR /src

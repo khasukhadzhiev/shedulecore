@@ -12,14 +12,9 @@ services:
       - "web-ui"
     ports:
       - "9090:9090"
-#      - "9091:9091"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_URLS=http://+:9090#;https://+:9090
-#      - ASPNETCORE_Kestrel__Certificates__Default__Password=0900
-#      - ASPNETCORE_Kestrel__Certificates__Default__Path=/https/aspnetcore-localhost-D9F2EF68C8B1B76FC864F2421A2F783590B50ADA.pfx
-    volumes:
-      - ~/.aspnet/https:/https:ro
+      - ASPNETCORE_URLS=http://+:9090
   postgres:
     container_name: postgres_container
     image: postgres:15-alpine

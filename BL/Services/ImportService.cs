@@ -120,6 +120,7 @@ namespace BL.Services
 
                 _importProgres.TotalLessonCount = reader.RowCount;
 
+
                 int rowIndex = 0;
                 while (reader.Read())
                 {
@@ -220,7 +221,6 @@ namespace BL.Services
                         });
                     }
 
-
                     //Добавляем учебные группы
                     var studyClassGroup = dataList.GroupBy(m => m.StudyClass);
 
@@ -228,7 +228,7 @@ namespace BL.Services
                     {
                         var educationForm = await _context.EducationForms.FirstOrDefaultAsync(e => e.Name == studyClass.FirstOrDefault().EducationForm);
 
-                        var classShift = await _context.ClassShifts.FirstOrDefaultAsync(e => e.Name == studyClass.FirstOrDefault().ClassShift);
+                        var classShift = await _context.ClassShifts.FirstOrDefaultAsync(e => e.Name == studyClass.FirstOrDefault().ClassShift); //TODO classShift и subdivision пустые при импорте. Надо понять почему.
 
                         var subdivision = await _context.Subdivisions.FirstOrDefaultAsync(e => e.Name == studyClass.FirstOrDefault().Subdivision);
 

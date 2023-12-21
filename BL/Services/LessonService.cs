@@ -116,8 +116,6 @@ namespace BL.Services
         {
             if (lessonDto.FlowStudyClassIds.Length > 0)
             {
-                using (var transaction = _context.Database.BeginTransaction())
-                {
                     try
                     {
                         if (lessonDto.Teacher != null)
@@ -157,15 +155,13 @@ namespace BL.Services
                         }
                         await _context.SaveChangesAsync();
 
-                        transaction.Commit();
+  
                     }
                     catch (Exception ex)
                     {
-                        transaction.Rollback();
 
                         throw new Exception(ex.Message);
                     }
-                }
             }
         }
 

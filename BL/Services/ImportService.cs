@@ -275,7 +275,7 @@ namespace BL.Services
                         if (row.IsFlow)
                         {
 
-                            var flowStudyClassNames = row.FlowStudyClassNames.Split(",");
+                            var flowStudyClassNames = row.FlowStudyClassNames.ToUpper().Replace(" ", "").Split(",");
 
                             var flowStudyClassIds = await _context.StudyClasses.Where(s => flowStudyClassNames.Contains(s.Name)).Select(s => s.Id).ToListAsync();
 

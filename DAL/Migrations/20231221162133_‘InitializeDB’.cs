@@ -9,7 +9,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DAL.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class InitializeDB : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -458,10 +458,10 @@ namespace DAL.Migrations
                 columns: new[] { "Id", "Name" },
                 values: new object[,]
                 {
-                    { 1, "Первая" },
-                    { 2, "Вторая" },
-                    { 3, "Третья" },
-                    { 4, "Четвертая" }
+                    { 1, "ПЕРВАЯ" },
+                    { 2, "ВТОРАЯ" },
+                    { 3, "ТРЕТЬЯ" },
+                    { 4, "ЧЕТВЕРТАЯ" }
                 });
 
             migrationBuilder.InsertData(
@@ -469,10 +469,10 @@ namespace DAL.Migrations
                 columns: new[] { "Id", "Name" },
                 values: new object[,]
                 {
-                    { 1, "Лекционная" },
-                    { 2, "Лаборатория" },
-                    { 3, "Практическая" },
-                    { 4, "Амфитеатр" }
+                    { 1, "ЛЕКЦИОННАЯ" },
+                    { 2, "ЛАБОРАТОРИЯ" },
+                    { 3, "ПРАКТИЧЕСКАЯ" },
+                    { 4, "АМФИТЕАТР" }
                 });
 
             migrationBuilder.InsertData(
@@ -480,9 +480,9 @@ namespace DAL.Migrations
                 columns: new[] { "Id", "Name" },
                 values: new object[,]
                 {
-                    { 1, "Очная" },
-                    { 2, "Заочная" },
-                    { 3, "Очно-заочная" }
+                    { 1, "ОЧНАЯ" },
+                    { 2, "ЗАОЧНАЯ" },
+                    { 3, "ОЧНО-ЗАОЧНАЯ" }
                 });
 
             migrationBuilder.InsertData(
@@ -495,10 +495,10 @@ namespace DAL.Migrations
                 columns: new[] { "Id", "Name" },
                 values: new object[,]
                 {
-                    { 1, "Лекция" },
-                    { 2, "Лабораторная" },
-                    { 3, "Практическое" },
-                    { 4, "Семинарское" }
+                    { 1, "ЛЕКЦИЯ" },
+                    { 2, "ЛАБОРАТОРНАЯ" },
+                    { 3, "ПРАКТИЧЕСКОЕ" },
+                    { 4, "СЕМИНАРСКОЕ" }
                 });
 
             migrationBuilder.InsertData(
@@ -506,9 +506,9 @@ namespace DAL.Migrations
                 columns: new[] { "Id", "Name" },
                 values: new object[,]
                 {
-                    { 1, "Экзамен" },
-                    { 2, "Зачет" },
-                    { 3, "Зачет с оценкой" }
+                    { 1, "ЭКЗАМЕН" },
+                    { 2, "ЗАЧЕТ" },
+                    { 3, "ЗЕАЧТ С ОЦЕНКОЙ" }
                 });
 
             migrationBuilder.InsertData(

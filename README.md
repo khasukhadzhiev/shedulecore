@@ -60,3 +60,11 @@ Frontend:
 ## Используемые наборы данных
 Данные для импорта, по которым можно формировать расписание лежат в тут же. Файл [Timetable-Data.xlsx](Timetable-Data.xlsx).
 
+
+## Добавление миграций
+dotnet ef migrations add ‘InitializeDB’ -s CoreAPI/CoreAPI.csproj -p DAL/DAL.csproj
+
+Запускать команду нужно из папки самого решения.
+-s это стартап проект
+-p это проект где находится логика данных
+

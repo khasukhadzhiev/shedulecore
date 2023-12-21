@@ -42,41 +42,41 @@ namespace DAL
             //------------------------------------------------
 
             builder.Entity<ClassroomType>().HasData(
-              new ClassroomType { Id = 1, Name = "Лекционная" });
+              new ClassroomType { Id = 1, Name = "ЛЕКЦИОННАЯ" });
 
             builder.Entity<ClassroomType>().HasData(
-              new ClassroomType { Id = 2, Name = "Лаборатория" });
+              new ClassroomType { Id = 2, Name = "ЛАБОРАТОРИЯ" });
 
             builder.Entity<ClassroomType>().HasData(
-              new ClassroomType { Id = 3, Name = "Практическая" });
+              new ClassroomType { Id = 3, Name = "ПРАКТИЧЕСКАЯ" });
 
             builder.Entity<ClassroomType>().HasData(
-              new ClassroomType { Id = 4, Name = "Амфитеатр" });
+              new ClassroomType { Id = 4, Name = "АМФИТЕАТР" });
 
             //------------------------------------------------
 
             builder.Entity<LessonType>().HasData(
-              new LessonType { Id = 1, Name = "Лекция" });
+              new LessonType { Id = 1, Name = "ЛЕКЦИЯ" });
 
             builder.Entity<LessonType>().HasData(
-              new LessonType { Id = 2, Name = "Лабораторная" });
+              new LessonType { Id = 2, Name = "ЛАБОРАТОРНАЯ" });
 
             builder.Entity<LessonType>().HasData(
-              new LessonType { Id = 3, Name = "Практическое" });
+              new LessonType { Id = 3, Name = "ПРАКТИЧЕСКОЕ" });
 
             builder.Entity<LessonType>().HasData(
-              new LessonType { Id = 4, Name = "Семинарское" });
+              new LessonType { Id = 4, Name = "СЕМИНАРСКОЕ" });
 
 
             //-------------------------------------------------
             builder.Entity<EducationForm>().HasData(
-                new EducationForm { Id = 1, Name = "Очная" });
+                new EducationForm { Id = 1, Name = "ОЧНАЯ" });
 
             builder.Entity<EducationForm>().HasData(
-                new EducationForm { Id = 2, Name = "Заочная" });
+                new EducationForm { Id = 2, Name = "ЗАОЧНАЯ" });
 
             builder.Entity<EducationForm>().HasData(
-                new EducationForm { Id = 3, Name = "Очно-заочная" });
+                new EducationForm { Id = 3, Name = "ОЧНО-ЗАОЧНАЯ" });
 
 
             //-------------------------------------------------
@@ -96,23 +96,23 @@ namespace DAL
 
             //-------------------------------------------------
             builder.Entity<ClassShift>().HasData(
-                new ClassShift { Id = 1, Name = "Первая" });
+                new ClassShift { Id = 1, Name = "ПЕРВАЯ" });
             builder.Entity<ClassShift>().HasData(
-                new ClassShift { Id = 2, Name = "Вторая" });
+                new ClassShift { Id = 2, Name = "ВТОРАЯ" });
             builder.Entity<ClassShift>().HasData(
-                new ClassShift { Id = 3, Name = "Третья" });
+                new ClassShift { Id = 3, Name = "ТРЕТЬЯ" });
             builder.Entity<ClassShift>().HasData(
-                new ClassShift { Id = 4, Name = "Четвертая" });
+                new ClassShift { Id = 4, Name = "ЧЕТВЕРТАЯ" });
 
             //-------------------------------------------------
             builder.Entity<ReportingType>().HasData(
-                new ReportingType { Id = 1, Name = "Экзамен" });
+                new ReportingType { Id = 1, Name = "ЭКЗАМЕН" });
 
             builder.Entity<ReportingType>().HasData(
-                new ReportingType { Id = 2, Name = "Зачет" });
+                new ReportingType { Id = 2, Name = "ЗАЧЕТ" });
 
             builder.Entity<ReportingType>().HasData(
-                new ReportingType { Id = 3, Name = "Зачет с оценкой" });
+                new ReportingType { Id = 3, Name = "ЗЕАЧТ С ОЦЕНКОЙ" });
 
         }
     }

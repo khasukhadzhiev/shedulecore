@@ -232,22 +232,22 @@ namespace DAL.Migrations
                         new
                         {
                             Id = 1,
-                            Name = "Первая"
+                            Name = "ПЕРВАЯ"
                         },
                         new
                         {
                             Id = 2,
-                            Name = "Вторая"
+                            Name = "ВТОРАЯ"
                         },
                         new
                         {
                             Id = 3,
-                            Name = "Третья"
+                            Name = "ТРЕТЬЯ"
                         },
                         new
                         {
                             Id = 4,
-                            Name = "Четвертая"
+                            Name = "ЧЕТВЕРТАЯ"
                         });
                 });
 
@@ -299,22 +299,22 @@ namespace DAL.Migrations
                         new
                         {
                             Id = 1,
-                            Name = "Лекционная"
+                            Name = "ЛЕКЦИОННАЯ"
                         },
                         new
                         {
                             Id = 2,
-                            Name = "Лаборатория"
+                            Name = "ЛАБОРАТОРИЯ"
                         },
                         new
                         {
                             Id = 3,
-                            Name = "Практическая"
+                            Name = "ПРАКТИЧЕСКАЯ"
                         },
                         new
                         {
                             Id = 4,
-                            Name = "Амфитеатр"
+                            Name = "АМФИТЕАТР"
                         });
                 });
 
@@ -338,17 +338,17 @@ namespace DAL.Migrations
                         new
                         {
                             Id = 1,
-                            Name = "Очная"
+                            Name = "ОЧНАЯ"
                         },
                         new
                         {
                             Id = 2,
-                            Name = "Заочная"
+                            Name = "ЗАОЧНАЯ"
                         },
                         new
                         {
                             Id = 3,
-                            Name = "Очно-заочная"
+                            Name = "ОЧНО-ЗАОЧНАЯ"
                         });
                 });
 
@@ -450,22 +450,22 @@ namespace DAL.Migrations
                         new
                         {
                             Id = 1,
-                            Name = "Лекция"
+                            Name = "ЛЕКЦИЯ"
                         },
                         new
                         {
                             Id = 2,
-                            Name = "Лабораторная"
+                            Name = "ЛАБОРАТОРНАЯ"
                         },
                         new
                         {
                             Id = 3,
-                            Name = "Практическое"
+                            Name = "ПРАКТИЧЕСКОЕ"
                         },
                         new
                         {
                             Id = 4,
-                            Name = "Семинарское"
+                            Name = "СЕМИНАРСКОЕ"
                         });
                 });
 
@@ -489,17 +489,17 @@ namespace DAL.Migrations
                         new
                         {
                             Id = 1,
-                            Name = "Экзамен"
+                            Name = "ЭКЗАМЕН"
                         },
                         new
                         {
                             Id = 2,
-                            Name = "Зачет"
+                            Name = "ЗАЧЕТ"
                         },
                         new
                         {
                             Id = 3,
-                            Name = "Зачет с оценкой"
+                            Name = "ЗЕАЧТ С ОЦЕНКОЙ"
                         });
                 });
 

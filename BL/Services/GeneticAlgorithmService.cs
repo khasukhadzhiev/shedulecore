@@ -97,7 +97,7 @@ namespace BL.Services
 
                 selectLessonTypeQuery += version.UseSubWeek ? " || (IsSubClassLesson == false && IsSubWeekLesson == true)" : "";
 
-                lessons = await _context.Lessons.AsQueryable()
+                lessons = await _context.Lessons.AsQueryable().AsTracking()
                                     .Include(l => l.Teacher)
                                     .Include(l => l.StudyClass)
                                         .ThenInclude(s => s.ClassShift)
@@ -245,8 +245,6 @@ namespace BL.Services
 
             if (_generateScheduleProgress.SaveWithMistakes)
             {
-                var sdsd = bestPopulation.Sum(l => l.Weight);
-
                 foreach (var lesson in lessons)
                 {
                     lesson.RowIndex = bestPopulation.FirstOrDefault(l => l.Id == lesson.Id).RowIndex;
@@ -254,6 +252,10 @@ namespace BL.Services
                 }
 
                 fitnessResult = true;
+
+                //bool hasChanges = _context.ChangeTracker.HasChanges(); // should be true
+                //int updates = _context.SaveChanges();                  // should be > 0
+
                 _context.SaveChanges();
             }
 

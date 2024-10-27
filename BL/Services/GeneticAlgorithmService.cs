@@ -93,9 +93,9 @@ namespace BL.Services
 
                 string selectLessonTypeQuery = "(IsSubClassLesson == false && IsSubWeekLesson == false)";
 
-                selectLessonTypeQuery += version.UseSubClass ? " || (IsSubClassLesson == true && IsSubWeekLesson == false)" : "";
+                selectLessonTypeQuery += version.UseSubClass ? " || (IsSubClassLesson == true)" : "";
 
-                selectLessonTypeQuery += version.UseSubWeek ? " || (IsSubClassLesson == false && IsSubWeekLesson == true)" : "";
+                selectLessonTypeQuery += version.UseSubWeek ? " || (IsSubWeekLesson == true)" : "";
 
                 lessons = await _context.Lessons.AsQueryable().AsTracking()
                                     .Include(l => l.Teacher)

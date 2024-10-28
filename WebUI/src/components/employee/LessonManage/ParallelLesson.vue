@@ -263,6 +263,7 @@ export default {
     studyClass: function() {
       if ("id" in this.studyClass) {
         this.getParallelLessonList(this.studyClass.id, this.version.id);
+        this.parallelLesson.studyClassId = this.studyClass.id;
       }
     },
     version: function() {

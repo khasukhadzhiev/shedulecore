@@ -25,7 +25,8 @@ namespace BL.Services
         {
             var classroomTypeList = await _context.ClassroomTypes
                 .AsNoTracking()
-                .Select(s => s.ToClassroomTypeDto())
+                .OrderBy(s => s.Name)
+                .Select(s => s.ToClassroomTypeDto())                
                 .ToListAsync();
 
             return classroomTypeList;
@@ -37,7 +38,8 @@ namespace BL.Services
             var classroomList = await _context.Classrooms
                 .AsNoTracking()
                 .Include(c => c.Building)
-                .Select(s => s.ToClassroomDto())
+                .OrderBy(s => s.Name)
+                .Select(s => s.ToClassroomDto())                
                 .ToListAsync();
 
             return classroomList;

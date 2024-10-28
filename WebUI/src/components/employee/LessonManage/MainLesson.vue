@@ -293,6 +293,7 @@ export default {
     studyClass: function() {
       if ("id" in this.studyClass && "id" in this.version) {
         this.getMainLessonList(this.studyClass.id, this.version.id);
+        this.mainLesson.studyClassId = this.studyClass.id;
       }
     },
     version: function() {

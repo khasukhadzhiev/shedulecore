@@ -118,6 +118,8 @@ namespace BL.Services
             {
                     try
                     {
+                    lessonDto.FlowStudyClassIds = lessonDto.FlowStudyClassIds.Distinct().ToArray();
+
                         if (lessonDto.Teacher != null)
                         {
                             lessonDto.TeacherId = lessonDto.Teacher.Id;

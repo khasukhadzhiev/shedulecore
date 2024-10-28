@@ -240,6 +240,7 @@ export default {
       this.flowLesson.flowStudyClassIds = this.selectedstudyClass.map(
         f => f.id
       );
+      this.flowLesson.flowStudyClassIds.push(this.studyClass.id);
       AddFlowLesson(this.flowLesson, this.version.id)
         .then(() => {
           this.$ntf.Success("Занятие сохранено!");
@@ -328,6 +329,7 @@ export default {
     studyClass: function() {
       if ('id' in this.studyClass) {
         this.getFlowLessonList(this.studyClass.id, this.version.id);
+        this.flowLesson.studyClassId = this.studyClass.id;
       }
     },
     version: function() {

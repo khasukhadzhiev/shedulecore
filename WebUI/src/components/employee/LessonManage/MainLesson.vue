@@ -140,6 +140,15 @@
         v-slot:cell(isSubClassLesson)="row"
       >{{row.item.isSubClassLesson ? "Подгруппа" : "Группа"}}</template>
 
+      <template v-slot:cell(removeFromTimetable)="row">
+          <span v-if="row.item.rowIndex != null" class="btn" @click="removeFromTimetable(row.item)">
+            <b-icon icon="reply"></b-icon>
+          </span>
+          <span v-else>
+            Не назначено
+          </span>
+      </template>
+
       <template v-slot:cell(remove)="data" style="width:50px">
         <span class="btn" @click="removeLesson(data.item.id)">
           <b-icon-trash variant="danger"></b-icon-trash>
@@ -156,6 +165,7 @@ import {
   AddMainLesson,
   RemoveLesson,
   EditLessonData,
+  LessonSet
 } from "../../../service/lessonService";
 
 export default {
@@ -181,13 +191,41 @@ export default {
         { key: "subject", label: "Дисциплина", sortable: true },
         { key: "teacher", label: "Преподаватель", sortable: true },
         { key: "isSubWeekLesson", label: "Неделя", sortable: true },
-        { key: "isSubClassLesson", label: "" },
+        { key: "isSubClassLesson", label: "Полнота" },
+        { key: "removeFromTimetable", label: "Положение" },
         { key: "remove", label: "" }
       ]
     };
   },
   computed: {},
   methods: {
+    removeFromTimetable(lesson){
+      this.$bvModal
+        .msgBoxConfirm("Вы уверены, что хотите удалить занятие из сетки расписания?", {
+          title: "Удаление из сетки расписания",
+          size: "sm",
+          buttonSize: "sm",
+          okVariant: "danger",
+          okTitle: "ДА",
+          cancelTitle: "НЕТ",
+          footerClass: "p-2",
+          hideHeaderClose: false,
+          centered: true
+        })
+        .then(value => {
+          if (value) {
+            lesson.RowIndex = null;
+            LessonSet(lesson)
+              .then(() => {
+                this.$ntf.Success("Положение занятия сброшено!");
+                this.getMainLessonList(this.studyClass.id, this.version.id);
+              })
+              .catch((error) => {
+                this.$ntf.Error("Неудалось сбросить положение занятия.", error);
+              });
+          }
+        });
+    },
     getMainLessonList(studyClassid, timetableVersionid) {
       this.isLoading = true;
       GetMainLessonList(studyClassid, timetableVersionid)

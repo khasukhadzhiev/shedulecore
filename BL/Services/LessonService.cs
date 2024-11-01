@@ -196,7 +196,7 @@ namespace BL.Services
         ///<inheritdoc/>
         public async Task RemoveLessonAsync(int lessonId)
         {
-            var lesson = await _context.Lessons.Where(l => l.Id == lessonId).FirstOrDefaultAsync();
+            var lesson = await _context.Lessons.FirstOrDefaultAsync(l => l.Id == lessonId);
 
             if (lesson != null)
             {
@@ -247,7 +247,7 @@ namespace BL.Services
         ///<inheritdoc/>
         public async Task<List<LessonDto>> GetLessonListAsync(int studyClassId, int versionId)
         {
-            var version = await _context.Versions.FirstOrDefaultAsync();
+            var version = await _context.Versions.FirstOrDefaultAsync(v => v.Id == versionId);
 
             var conditionString = new StringBuilder();
 

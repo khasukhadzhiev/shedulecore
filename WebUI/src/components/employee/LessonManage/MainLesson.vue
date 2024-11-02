@@ -142,6 +142,7 @@
 
       <template v-slot:cell(removeFromTimetable)="row">
           <span v-if="row.item.rowIndex != null" class="btn" @click="removeFromTimetable(row.item)">
+            {{ discriptLessonDayAndNumber(row.item.lessonDay, row.item.lessonNumber) }}
             <b-icon icon="reply"></b-icon>
           </span>
           <span v-else>
@@ -165,7 +166,8 @@ import {
   AddMainLesson,
   RemoveLesson,
   EditLessonData,
-  LessonSet
+  LessonSet,
+  DiscriptLessonDayAndNumber
 } from "../../../service/lessonService";
 
 export default {
@@ -190,8 +192,8 @@ export default {
         { key: "lessonType", label: "Вид занятия", sortable: true },
         { key: "subject", label: "Дисциплина", sortable: true },
         { key: "teacher", label: "Преподаватель", sortable: true },
-        { key: "isSubWeekLesson", label: "Неделя", sortable: true },
         { key: "isSubClassLesson", label: "Полнота" },
+        { key: "isSubWeekLesson", label: "Неделя", sortable: true },
         { key: "removeFromTimetable", label: "Положение" },
         { key: "remove", label: "" }
       ]
@@ -310,6 +312,9 @@ export default {
         .finally(() => {
           this.isLoading = false;
         });      
+    },
+    discriptLessonDayAndNumber(lessonDay, lessonNumber){
+      return DiscriptLessonDayAndNumber(lessonDay, lessonNumber);
     }
   },
   created() {

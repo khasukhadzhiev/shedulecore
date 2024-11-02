@@ -113,7 +113,15 @@
           <template slot="noResult">Преподаватель не найден!</template>
         </multiselect>
       </template>
-
+      <template v-slot:cell(removeFromTimetable)="row">
+          <span v-if="row.item.rowIndex != null" class="btn" @click="removeFromTimetable(row.item)">
+            {{ discriptLessonDayAndNumber(row.item.lessonDay, row.item.lessonNumber) }}
+            <b-icon icon="reply"></b-icon>
+          </span>
+          <span v-else>
+            Не назначено
+          </span>
+      </template>
       <template v-slot:cell(remove)="data" style="width:50px">
         <span class="btn" @click="removeLesson(data.item.id)">
           <b-icon-trash variant="danger"></b-icon-trash>
@@ -129,7 +137,9 @@ import {
   GetParallelLessonFilterList,
   AddParallelLesson,
   RemoveLesson,
-  EditLessonData
+  EditLessonData,
+  LessonSet,
+  DiscriptLessonDayAndNumber
 } from "../../../service/lessonService";
 
 export default {
@@ -153,12 +163,40 @@ export default {
         { key: "lessonType", label: "Вид занятия", sortable: true },
         { key: "subject", label: "Дисциплина", sortable: true },
         { key: "teacher", label: "Преподаватель", sortable: true },
+        { key: "removeFromTimetable", label: "Положение" },
         { key: "remove", label: "" }
       ]
     };
   },
   computed: {},
   methods: {
+    removeFromTimetable(lesson){
+      this.$bvModal
+        .msgBoxConfirm("Вы уверены, что хотите удалить занятие из сетки расписания?", {
+          title: "Удаление из сетки расписания",
+          size: "sm",
+          buttonSize: "sm",
+          okVariant: "danger",
+          okTitle: "ДА",
+          cancelTitle: "НЕТ",
+          footerClass: "p-2",
+          hideHeaderClose: false,
+          centered: true
+        })
+        .then(value => {
+          if (value) {
+            lesson.RowIndex = null;
+            LessonSet(lesson)
+              .then(() => {
+                this.$ntf.Success("Положение занятия сброшено!");
+                this.getMainLessonList(this.studyClass.id, this.version.id);
+              })
+              .catch((error) => {
+                this.$ntf.Error("Неудалось сбросить положение занятия.", error);
+              });
+          }
+        });
+    },
     getParallelLessonList(studyClassId, timetableVersionId) {
       this.isLoading = true;
       GetParallelLessonList(studyClassId, timetableVersionId)
@@ -242,6 +280,9 @@ export default {
         .finally(() => {
           this.isLoading = false;
         });
+    },
+    discriptLessonDayAndNumber(lessonDay, lessonNumber){
+      return DiscriptLessonDayAndNumber(lessonDay, lessonNumber);
     }
   },
   created() {

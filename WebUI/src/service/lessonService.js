@@ -1,4 +1,31 @@
 import { timetableAPI } from '../common/axios-common';
+let dayLabels = [
+  "Понедельник",
+  "Вторник",
+  "Среда",
+  "Четверг",
+  "Пятница",
+  "Суббота",
+  "Воскресенье"
+];
+let lessonNumberLabels = [
+  "Первая",
+  "Вторая",
+  "Третья",
+  "Четвертая",
+  "Пятая",
+  "Шестая",
+  "Седьмая",
+  "Восьмая",
+  "Девятая",
+  "Десятая",
+  "Одинадцатая",
+  "Двенадцатая",
+  "Тринадцатая",
+  "Четырнадцатая",
+  "Пятнадцатая",
+];
+
 
 export function GetMainLessonList(studyClassId, versionId) {
   const url = 'Lesson/GetMainLessonList';
@@ -240,4 +267,10 @@ export function GetParallelLessonFilterList(studyClassId, versionId, filter) {
         return reject(error);
       });
   });
+}
+
+export function DiscriptLessonDayAndNumber(lessonDay, lessonNumber){
+  if(lessonDay < 7 && lessonNumber <15){
+    return dayLabels[lessonDay]+ ", " + lessonNumberLabels[lessonNumber] + " пара"
+  }
 }

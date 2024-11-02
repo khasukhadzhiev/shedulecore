@@ -31,6 +31,7 @@ namespace BL.Services
                 .Include(l => l.StudyClass)
                 .Include(l => l.Subject)
                 .Include(l => l.Teacher)
+                .Include(l => l.Version)
                 .Where(l => l.StudyClassId == studyClassId
                             && l.FlowId == null
                             && !l.IsParallel
@@ -51,6 +52,7 @@ namespace BL.Services
                 .Include(l => l.StudyClass)
                 .Include(l => l.Subject)
                 .Include(l => l.Teacher)
+                .Include(l => l.Version)
                 .Where(f => f.StudyClassId == studyClassId
                             && f.FlowId != null
                             && f.VersionId == versionId)
@@ -75,6 +77,7 @@ namespace BL.Services
                 .Include(p => p.StudyClass)
                 .Include(p => p.Subject)
                 .Include(p => p.Teacher)
+                .Include(l => l.Version)
                 .Where(p => p.StudyClassId == studyClassId
                             && p.IsParallel
                             && p.VersionId == versionId)
@@ -283,6 +286,7 @@ namespace BL.Services
                 .Include(l => l.Subject)
                 .Include(l => l.Teacher)
                 .Include(l => l.Flow)
+                .Include(l => l.Version)
                 .Where(conditionString.ToString())
                 .Where(l => l.VersionId == versionId)
                 .OrderBy(l => l.Subject.Name).ThenBy(l => l.LessonType.Id)
@@ -353,11 +357,25 @@ namespace BL.Services
         ///<inheritdoc/>
         public async Task EditLessonDataAsync(LessonDto lessonDto, int versionId)
         {
-            var lesson = await _context.Lessons.FirstOrDefaultAsync(l => l.Id == lessonDto.Id);
+            var lesson = await _context.Lessons.Include(l =>l.Subject).Include(l=> l.Teacher).FirstOrDefaultAsync(l => l.Id == lessonDto.Id);
 
-            lesson.TeacherId = lessonDto.Teacher.Id;
+            if (lesson.FlowId != null)
+            {
+                var flows = _context.Lessons.Include(l => l.Subject).Include(l => l.Teacher).Where(l => l.FlowId == lesson.FlowId);
 
-            lesson.SubjectId = lessonDto.Subject.Id;
+                foreach (var flow in flows)
+                {
+                    flow.TeacherId = lessonDto.Teacher.Id;
+
+                    flow.SubjectId = lessonDto.Subject.Id;
+                }
+            }
+            else
+            {
+                lesson.TeacherId = lessonDto.Teacher.Id;
+
+                lesson.SubjectId = lessonDto.Subject.Id;
+            }
 
             await _context.SaveChangesAsync();
         }
@@ -371,6 +389,7 @@ namespace BL.Services
                 .Include(l => l.StudyClass)
                 .Include(l => l.Subject)
                 .Include(l => l.Teacher)
+                .Include(l => l.Version)
                 .Where(l => l.StudyClassId == studyClassId
                             && l.FlowId == null
                             && !l.IsParallel
@@ -392,6 +411,7 @@ namespace BL.Services
                 .Include(l => l.StudyClass)
                 .Include(l => l.Subject)
                 .Include(l => l.Teacher)
+                .Include(l => l.Version)
                 .Where(f => f.StudyClassId == studyClassId
                             && f.FlowId != null
                             && f.VersionId == versionId)
@@ -417,6 +437,7 @@ namespace BL.Services
                 .Include(p => p.StudyClass)
                 .Include(p => p.Subject)
                 .Include(p => p.Teacher)
+                .Include(l => l.Version)
                 .Where(p => p.StudyClassId == studyClassId
                             && p.IsParallel
                             && p.VersionId == versionId)

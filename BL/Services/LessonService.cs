@@ -368,6 +368,10 @@ namespace BL.Services
                     flow.TeacherId = lessonDto.Teacher.Id;
 
                     flow.SubjectId = lessonDto.Subject.Id;
+
+                    flow.IsSubClassLesson = lessonDto.IsSubClassLesson;
+
+                    flow.IsSubWeekLesson = lessonDto.IsSubWeekLesson;
                 }
             }
             else
@@ -375,6 +379,10 @@ namespace BL.Services
                 lesson.TeacherId = lessonDto.Teacher.Id;
 
                 lesson.SubjectId = lessonDto.Subject.Id;
+
+                lesson.IsSubClassLesson = lessonDto.IsSubClassLesson;
+
+                lesson.IsSubWeekLesson = lessonDto.IsSubWeekLesson;
             }
 
             await _context.SaveChangesAsync();

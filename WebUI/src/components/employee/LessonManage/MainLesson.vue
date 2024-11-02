@@ -92,7 +92,7 @@
       outlined
       head-variant="light"
       :items="mainLessonList"
-      :fields="fields"
+      :fields="computedFields"
       :busy="isLoading"
       class="text-left"
     >
@@ -134,11 +134,18 @@
         </multiselect>
       </template>
       <template
-        v-slot:cell(isSubWeekLesson)="row"
-      >{{row.item.isSubWeekLesson ? "По одной неделе" : "По каждой неделе"}}</template>
+        v-slot:cell(isSubWeekLesson)="row" v-if="version.useSubWeek"
+      ><span class="btn" @click="changeSubWeekOrSubClassType(row.item, true, null)">
+        {{row.item.isSubWeekLesson ? "По одной неделе" : "По каждой неделе"}}
+        <b-icon icon="arrow-left-right" v-if="row.item.rowIndex == null" ></b-icon>
+      </span></template>
       <template
-        v-slot:cell(isSubClassLesson)="row"
-      >{{row.item.isSubClassLesson ? "Подгруппа" : "Группа"}}</template>
+        v-slot:cell(isSubClassLesson)="row"  v-if="version.useSubClass">
+      <span class="btn" @click="changeSubWeekOrSubClassType(row.item, null, true)">
+        {{row.item.isSubClassLesson ? "Подгруппа" : "Группа"}}
+        <b-icon icon="arrow-left-right" v-if="row.item.rowIndex == null"></b-icon>
+      </span>
+      </template>
 
       <template v-slot:cell(removeFromTimetable)="row">
           <span v-if="row.item.rowIndex != null" class="btn" @click="removeFromTimetable(row.item)">
@@ -199,7 +206,20 @@ export default {
       ]
     };
   },
-  computed: {},
+  computed: {
+    computedFields(){
+      let reuslt = this.fields;
+      if(!this.version.useSubClass){
+        reuslt = reuslt.filter(field => field.key != "isSubClassLesson");
+      }
+
+      if(!this.version.useSubWeek){
+        reuslt = reuslt.filter(field => field.key != "isSubWeekLesson");
+      }
+
+      return reuslt;
+    }    
+  },
   methods: {
     removeFromTimetable(lesson){
       this.$bvModal
@@ -299,6 +319,20 @@ export default {
               });
           }
         });
+    },
+    changeSubWeekOrSubClassType(lesson, isSubWeek, isSubClass){
+      if(lesson.rowIndex != null){
+        return;
+      }
+
+      if(isSubWeek){
+        lesson.isSubWeekLesson = !lesson.isSubWeekLesson;
+        this.editLessonData(lesson);
+      }
+      else if(isSubClass){
+        lesson.isSubClassLesson = !lesson.isSubClassLesson;
+        this.editLessonData(lesson);
+      }
     },
     editLessonData(lesson){
       this.isLoading = true;

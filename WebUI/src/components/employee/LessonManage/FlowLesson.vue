@@ -103,7 +103,7 @@
       outlined
       head-variant="light"
       :items="flowLessonList"
-      :fields="fields"
+      :fields="computedFields"
       :busy="isLoading"
       class="text-left"
     >
@@ -148,11 +148,11 @@
 
       <template v-slot:cell(flowStudyClassNames)="row">{{row.item.flowStudyClassNames}}</template>
       <template
-        v-slot:cell(isSubWeekLesson)="row"
-      >{{row.item.isSubWeekLesson ? "По одной неделе" : "По каждой неделе"}}</template>
-      <template
-        v-slot:cell(isSubClassLesson)="row"
-      >{{row.item.isSubClassLesson ? "Подгруппа" : "Группа"}}</template>
+        v-slot:cell(isSubWeekLesson)="row" v-if="version.useSubWeek"
+      ><span class="btn" @click="changeSubWeekType(row.item)">
+        {{row.item.isSubWeekLesson ? "По одной неделе" : "По каждой неделе"}}
+        <b-icon icon="arrow-left-right" v-if="row.item.rowIndex == null" ></b-icon>
+      </span></template>
 
       <template v-slot:cell(removeFromTimetable)="row">
           <span v-if="row.item.rowIndex != null" class="btn" @click="removeFromTimetable(row.item)">
@@ -207,14 +207,23 @@ export default {
         { key: "subject", label: "Дисциплина", sortable: true  },
         { key: "teacher", label: "Преподаватель", sortable: true  },
         { key: "flowStudyClassNames", label: "Группы в потоке", sortable: true  },
-        { key: "isSubClassLesson", label: "Полнота" },
         { key: "isSubWeekLesson", label: "Неделя" },
         { key: "removeFromTimetable", label: "Положение" },
         { key: "remove", label: "" }
       ]
     };
   },
-  computed: {},
+  computed: {
+    computedFields(){
+      let reuslt = this.fields;
+
+      if(!this.version.useSubWeek){
+        reuslt = reuslt.filter(field => field.key != "isSubWeekLesson");
+      }
+
+      return reuslt;
+    }
+  },
   methods: {
     removeFromTimetable(lesson){
       this.$bvModal
@@ -235,7 +244,7 @@ export default {
             LessonSet(lesson)
               .then(() => {
                 this.$ntf.Success("Положение занятия сброшено!");
-                this.getMainLessonList(this.studyClass.id, this.version.id);
+                this.getFlowLessonList(this.studyClass.id, this.version.id);
               })
               .catch((error) => {
                 this.$ntf.Error("Неудалось сбросить положение занятия.", error);
@@ -338,6 +347,13 @@ export default {
       setTimeout(function() {
         select.scrollTop = scroll;
       }, 0);
+    },
+    changeSubWeekType(lesson){
+      if(lesson.rowIndex != null){
+        return;
+      }
+      lesson.isSubWeekLesson = !lesson.isSubWeekLesson;
+      this.editLessonData(lesson);
     },
     editLessonData(lesson){
       this.isLoading = true;

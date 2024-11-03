@@ -7,6 +7,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using BL.ServiceInterface;
 using DAL;
+using DAL.Entities.Schedule;
+using DAL.Entities;
 
 namespace BL.Services
 {
@@ -129,6 +131,8 @@ namespace BL.Services
             {
                 var version = await _context.Versions.FirstOrDefaultAsync(v => v.Id == versionDto.Id);
 
+                CalculateRowIndex(version, versionDto);
+
                 version.IsActive = versionDto.IsActive;
                 version.Name = versionDto.Name;
                 version.MaxLesson = versionDto.MaxLesson;
@@ -167,6 +171,50 @@ namespace BL.Services
             _context.Versions.Remove(version);
 
             await _context.SaveChangesAsync();
+        }
+
+        /// <summary>
+        /// Пересчет позиции занятия при измении количества занятий в день или деления на недели
+        /// </summary>
+        /// <param name="versionOld"></param>
+        /// <param name="versionNew"></param>
+        private void CalculateRowIndex(DAL.Entities.Version versionOld, VersionDto versionNew) 
+        {
+            if (versionOld.MaxLesson != versionNew.MaxLesson || versionOld.UseSubWeek != versionNew.UseSubWeek)
+            {
+                var setedLessonListByVersion = _context.Lessons
+                    .Include(l => l.Version)
+                    .Where(l => l.VersionId == versionOld.Id)
+                    .Where(l => l.RowIndex != null)
+                    .ToList();
+
+                var isToLowCountMaxLesson = setedLessonListByVersion.Any(l => l.LessonNumber+1 > versionNew.MaxLesson);
+
+                if (isToLowCountMaxLesson)
+                {
+                    throw new Exception("Нельзя ставить число занятий в день, меньше чем уже поставлено занятие в сетке расписания!");
+                }
+
+                foreach (var lesson in setedLessonListByVersion)
+                {
+                    int rowIndex = lesson.RowIndex.Value;
+
+                    int lessonDay = lesson.LessonDay.Value;
+
+                    int lessonNumber = lesson.LessonNumber.Value;
+
+                    int? lessonWeek = lesson.WeekNumber;
+
+                    lesson.RowIndex = versionNew.UseSubWeek ? lessonDay * versionNew.MaxLesson * 2 : lessonDay * versionNew.MaxLesson;
+
+                    lesson.RowIndex += versionNew.UseSubWeek ? lessonNumber * 2 : lessonNumber;
+
+                    if (lesson.WeekNumber != null)
+                    {
+                        lesson.RowIndex += lessonWeek.Value == 1 ? 0 : 1;
+                    }
+                }
+            }
         }
     }
 }

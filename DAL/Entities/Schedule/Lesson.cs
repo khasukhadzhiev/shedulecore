@@ -198,5 +198,39 @@ namespace DAL.Entities.Schedule
                 LessonNumber = value;
             }
         }
+
+        /// <summary>
+        /// Четность(номер) недели
+        /// </summary>
+        [NotMapped]
+        public int? WeekNumber
+        {
+            get
+            {
+                if (Version != null && RowIndex != null)
+                {
+                    int? result;
+
+                    if (IsSubWeekLesson)
+                    {
+                        result = RowIndex % 2 == 0 ? 1 : 2;
+                    }
+                    else
+                    {
+                        result = null;
+                    }
+
+                    return result;
+                }
+                else
+                {
+                    return null;
+                }
+            }
+            set
+            {
+                WeekNumber = value;
+            }
+        }
     }
 }

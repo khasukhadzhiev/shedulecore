@@ -85,6 +85,11 @@
         /// </summary>
         public int? LessonNumber { get; set; }
 
+        /// <summary>
+        /// Номер занятия
+        /// </summary>
+        public int? WeekNumber { get; set; }
+
 
         /// <summary>
         /// Версия расписания с настройками

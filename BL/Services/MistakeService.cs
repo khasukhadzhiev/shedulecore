@@ -233,7 +233,9 @@ namespace BL.Services
             }
             else
             {
-                result = $"Занятие: {rowIndex % version.MaxLesson + 1}";
+                var row = rowIndex % version.MaxLesson + 1;
+                row = row + (row-1);
+                result = $"Пара: {row}-{row + 1}";
             }
 
             return result;

@@ -66,7 +66,7 @@ async function calculateLessonLabelCell(rowIndex) {
     if (version.useSubWeek) {
         if ((rowIndex + 1) % 2 != 0) {
             let row = (rowIndex % lessonCountAtDay) + 1;
-            let label = row % 2 != 0 ? `${(row + 1) / 2}` : "";//`${row}-${row + 1}` : "";
+            let label = row % 2 != 0 ? `${row}-${row + 1}` : "";//`${(row + 1) / 2}` : "";
 
             result.addBorder =
                 ((rowIndex + 1) % lessonCountAtDay) + 1 ==
@@ -80,7 +80,9 @@ async function calculateLessonLabelCell(rowIndex) {
             result.combineRow = 0;
         }
     } else {
-        result.label = (rowIndex % lessonCountAtDay) + 1;
+        let row = (rowIndex % lessonCountAtDay) + 1;
+        row = row +(row -1);
+        result.label = `${row}-${row + 1}`;
         result.addBorder =
             (rowIndex % lessonCountAtDay) + 1 == lessonCountAtDay
                 ? true

@@ -91,13 +91,11 @@ namespace BL.Services
                     .AsQueryable()
                     .Where(conditionString.ToString())
                     .Where(l => l.StudyClass.ClassShiftId == lesson.StudyClass.ClassShiftId)
-                    .Where(l => l.Version.IsActive && l.Id != lesson.Id);
+                    .Where(l => l.Version.IsActive && l.Id != lesson.Id)
+                    .Where(l =>l.StudyClassId != studyClassId);
 
                 var mistakeTeacherLessonList = mistakeLessonList
                     .Where(l => l.TeacherId == lesson.TeacherId);
-
-                var mistakeStudyClassLessonList = mistakeLessonList
-                    .Where(l => l.StudyClassId == lesson.StudyClassId && l.ColIndex == lesson.ColIndex);
 
                 var mistakeClassroomLessonList = mistakeLessonList
                     .Where(l => l.ClassroomId == lesson.ClassroomId && l.ClassroomId != null && lesson.ClassroomId != null);
@@ -105,13 +103,6 @@ namespace BL.Services
                 foreach (var mistake in mistakeTeacherLessonList)
                 {
                     var message = $"{GetDayName(mistake.RowIndex.Value, version)} | {GetLessonNumber(mistake.RowIndex.Value, version)} | Накладка по преподавателю: {GetTeacherFIO(mistake.Teacher)} | {mistake.StudyClass.Name}";
-
-                    result.Add(message);
-                }
-
-                foreach (var mistake in mistakeStudyClassLessonList)
-                {
-                    var message = $"{GetDayName(mistake.RowIndex.Value, version)} | {GetLessonNumber(mistake.RowIndex.Value, version)} | Накладка: {mistake.StudyClass.Name}";
 
                     result.Add(message);
                 }

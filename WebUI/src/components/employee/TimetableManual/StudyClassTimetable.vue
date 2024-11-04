@@ -1218,8 +1218,12 @@ td {
 }
 
 .classroom-select {
-  width: auto;
-  border: none;
+  width: 140px;
+  font-weight: 600;
+  font-size: 9pt;
+  text-align: left;
+  border: 1px solid #919191;
+  margin-bottom: -1px;
   background-color: inherit;
 }
 </style>

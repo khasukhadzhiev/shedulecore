@@ -41,10 +41,13 @@ namespace BL.Services
 
             var studyClassLessons = _context.Lessons
                 .Include(l => l.StudyClass)
+                .Where(l => l.RowIndex != null)
                 .Where(l => l.StudyClassId == studyClassId && l.StudyClass.ClassShiftId == studyClass.ClassShiftId);
 
             var intersectLessons = await _context.Lessons
                 .AsQueryable()
+                .Where(l => l.VersionId == versionId)
+                .Where(l => l.RowIndex != null)
                 .Include(l => l.Teacher)
                 .Include(l => l.StudyClass)
                     .ThenInclude(s => s.ClassShift)
@@ -52,8 +55,6 @@ namespace BL.Services
                     .ThenInclude(s => s.EducationForm)
                 .Include(l => l.Classroom)
                 .Include(l => l.Version)
-                .Where(l => l.VersionId == versionId)
-                .Where(l => l.RowIndex != null && l.Teacher != null)
                 .Where(l => l.StudyClass.ClassShiftId == studyClass.ClassShiftId)
                 .Where(l => studyClassLessons.Any(l2 => l.TeacherId == l2.TeacherId
                                     || (l.ClassroomId == l2.ClassroomId && l.ClassroomId != null && l2.ClassroomId != null)))
@@ -70,28 +71,32 @@ namespace BL.Services
 
                 if (!lesson.IsSubClassLesson && !lesson.IsSubWeekLesson)
                 {
-                    conditionString.Append($"(RowIndex == {lesson.RowIndex}" + (version.UseSubWeek ? $" || RowIndex == {rowIndexSecond}" : "") + ")");
+                    conditionString.Append($"(RowIndex == {lesson.RowIndex})");
+                    conditionString.Append($" AND ((ClassroomId == {lesson.ClassroomId ?? -1} || TeacherId == {lesson.TeacherId}))");
                     conditionString.Append($" AND ((FlowId == null AND  {lesson.FlowId == null}) || FlowId != {lesson.FlowId ?? -1})");
                 }
                 else if (!lesson.IsSubClassLesson && lesson.IsSubWeekLesson)
                 {
                     conditionString.Append($"(RowIndex == {lesson.RowIndex} || (IsSubWeekLesson == {false} && RowIndex == {rowIndexSecond}))");
+                    conditionString.Append($" AND ((ClassroomId == {lesson.ClassroomId ?? -1} || TeacherId == {lesson.TeacherId}))");
                     conditionString.Append($" AND FlowId != {lesson.FlowId ?? -1}");
                 }
                 else if (lesson.IsSubClassLesson && !lesson.IsSubWeekLesson)
                 {
-                    conditionString.Append($"RowIndex == {lesson.RowIndex}" + (version.UseSubWeek ? $" || RowIndex == {rowIndexSecond}" : ""));
+                    conditionString.Append($"(RowIndex == {lesson.RowIndex}" + (version.UseSubWeek ? $" || RowIndex == {rowIndexSecond})" : ""));
+                    conditionString.Append($" AND ((ClassroomId == {lesson.ClassroomId ?? -1} || TeacherId == {lesson.TeacherId}))");
                 }
                 else
                 {
-                    conditionString.Append($"RowIndex == {lesson.RowIndex}");
+                    conditionString.Append($"(RowIndex == {lesson.RowIndex} || RowIndex == {rowIndexSecond})");
+                    conditionString.Append($" AND ((ClassroomId == {lesson.ClassroomId ?? -1} || TeacherId == {lesson.TeacherId}))");
+                    conditionString.Append($" AND ((FlowId == null AND  {lesson.FlowId == null}) || FlowId != {lesson.FlowId ?? -1})");
                 }
 
                 var mistakeLessonList = intersectLessons
                     .AsQueryable()
                     .Where(conditionString.ToString())
-                    .Where(l => l.StudyClass.ClassShiftId == lesson.StudyClass.ClassShiftId)
-                    .Where(l => l.Version.IsActive && l.Id != lesson.Id)
+                    .Where(l =>l.Id != lesson.Id)
                     .Where(l =>l.StudyClassId != studyClassId);
 
                 var mistakeTeacherLessonList = mistakeLessonList

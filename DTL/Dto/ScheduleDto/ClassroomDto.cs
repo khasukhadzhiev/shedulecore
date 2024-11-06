@@ -24,5 +24,10 @@
         /// Учебный корпус
         /// </summary>
         public BuildingDto BuildingDto { get; set; }
+
+        /// <summary>
+        /// Тип аудитории
+        /// </summary>
+        public ClassroomTypeDto ClassroomTypeDto { get; set; }
     }
 }

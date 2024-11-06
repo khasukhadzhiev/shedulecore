@@ -20,7 +20,7 @@ export const EmployeeRouteEnum = {
 export const AdminRouteEnum = {
     version: '/admin/version',
     subdivision: '/admin/subdivision',
-    dataImport: '/admin/data-import',
+    import: '/admin/import',
     dataManage: '/admin/data-manage',
     employeeList: '/admin/employee-list',
 };

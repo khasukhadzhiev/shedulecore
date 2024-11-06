@@ -25,6 +25,7 @@ namespace BL.Services
             services.AddTransient<IGeneticAlgorithmService, GeneticAlgorithmService>();
             services.AddTransient<IBuildingService, BuildingService>();
             services.AddTransient<IStudyClassReportingService, StudyClassReportingService>();
+            services.AddTransient<IClassroomTypeService, ClassroomTypeService>();
         }
     }
 }

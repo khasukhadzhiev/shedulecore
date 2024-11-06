@@ -79,7 +79,7 @@
                 <router-link :to="adminRouteEnum.employeeList">Сотрудники</router-link>
               </li>
               <li>
-                <router-link :to="adminRouteEnum.dataImport">Импорт нагрузки</router-link>
+                <router-link :to="adminRouteEnum.import">Импорт</router-link>
               </li>
               <li>
                 <router-link :to="adminRouteEnum.dataManage">Управление нагрузкой</router-link>

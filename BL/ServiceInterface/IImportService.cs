@@ -14,6 +14,13 @@ namespace BL.ServiceInterface
         Task ImportScheduleDataAsync(IFormFile file, int scheduleVersionId);
 
         /// <summary>
+        /// Импортировать список аудиторий
+        /// </summary>
+        /// <param name="file">Импортируемый файл</param>
+        /// <returns></returns>
+        Task ImportClassroomListAsync(IFormFile file, int scheduleVersionId);
+
+        /// <summary>
         /// Очистить историю импорта
         /// </summary>
         /// <returns></returns>

@@ -105,6 +105,17 @@ namespace DTL.Mapping
             return classroom;
         }
 
+        public static ClassroomType ToClassroomType(this ClassroomTypeDto classroomTypeDto)
+        {
+            var classroomType= new ClassroomType
+            {
+                Id = classroomTypeDto.Id,
+                Name = classroomTypeDto.Name
+            };
+
+            return classroomType;
+        }
+
         public static Teacher ToTeacher(this TeacherDto teacherDto)
         {
             var teacher = new Teacher

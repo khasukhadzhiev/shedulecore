@@ -28,6 +28,15 @@ namespace CoreAPI.Controllers
             return Ok();
         }
 
+        [HttpPost]
+        [Route("ImportClassroomList")]
+        public async Task<IActionResult> ImportClassroomList(IFormFile file, int versionId)
+        {
+            await _importService.ImportClassroomListAsync(file, versionId);
+
+            return Ok();
+        }
+
         [HttpGet]
         [Route("GetImportProgress")]
         public async Task<IActionResult> GetImportProgress()

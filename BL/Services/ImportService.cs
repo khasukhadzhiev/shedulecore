@@ -13,6 +13,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using DAL;
+using DAL.Entities.Schedule;
 
 namespace BL.Services
 {
@@ -32,6 +33,12 @@ namespace BL.Services
 
         private readonly IStudyClassReportingService _studyClassReportingService;
 
+        private readonly IBuildingService _buildingService;
+
+        private readonly IClassroomService _classroomService;
+
+        private readonly IClassroomTypeService _classroomTypeService;
+
         private readonly ImportProgress _importProgres;
 
         public ImportService(ScheduleHighSchoolDb context,
@@ -41,6 +48,9 @@ namespace BL.Services
             ISubjectService subjectService,
             IStudyClassService studyClassService,
             IStudyClassReportingService studyClassReportingService,
+            IBuildingService buildingService,
+            IClassroomService classroomService,
+            IClassroomTypeService classroomTypeService,
             ImportProgress importProgres
             )
         {
@@ -51,6 +61,9 @@ namespace BL.Services
             _subjectService = subjectService;
             _studyClassService = studyClassService;
             _importProgres = importProgres;
+            _buildingService = buildingService;
+            _classroomService = classroomService;
+            _classroomTypeService = classroomTypeService;
             _studyClassReportingService = studyClassReportingService;
         }
 
@@ -317,6 +330,137 @@ namespace BL.Services
                                 IsSubWeekLesson = row.IsSubweekLesson,
                             }, versionId);
                         }
+
+                        _importProgres.CheckedLessonCount++;
+                    }
+
+                    transaction.Commit();
+                    _importProgres.ImportFinished = true;
+                }
+                catch (Exception ex)
+                {
+                    transaction.Rollback();
+                    _importProgres.ImportError = true;
+                    _importProgres.ImportFinished = true;
+                    _importProgres.ErrorMessage = $"Ошибка при импорте данных. Строка: {_importProgres.CheckedLessonCount + 1}";
+
+                    throw new Exception(ex.Message);
+                }
+            }
+        }
+
+        public async Task ImportClassroomListAsync(IFormFile file, int versionId)
+        {
+            if (_importProgres.InProcess)
+            {
+                throw new Exception("Предыдущий импорт еще не закончен!");
+            }
+
+            _importProgres.TotalLessonCount = 0;
+            _importProgres.CheckedLessonCount = 0;
+            _importProgres.ImportError = false;
+            _importProgres.ErrorMessage = null;
+            _importProgres.ImportFinished = false;
+            _importProgres.InProcess = true;
+
+            //Первая строка файла импорта не заносится. Первой строкой должны быть заголовки столбцов.
+
+            List<ImportClassroomModel> dataList = new List<ImportClassroomModel>();
+
+            using (var stream = new MemoryStream())
+            {
+                await file.CopyToAsync(stream);
+
+                var reader = ExcelReaderFactory.CreateReader(stream);
+
+                _importProgres.TotalLessonCount = reader.RowCount;
+
+
+                int rowIndex = 0;
+                while (reader.Read())
+                {
+                    try
+                    {
+                        if (rowIndex == 0)
+                        {
+                            rowIndex++;
+                            continue;
+                        }
+
+                        ImportClassroomModel importClassroomModel = new ImportClassroomModel();
+
+                        importClassroomModel.BuildingName = reader.GetValue(0).ToString().Trim().ToUpper();
+                        importClassroomModel.ClassroomType = reader.GetValue(1).ToString().Trim().ToUpper();
+                        importClassroomModel.ClassroomName = reader.GetValue(2).ToString().Trim().ToUpper();
+                        importClassroomModel.SeatsCount = Convert.ToInt32(reader.GetValue(3));
+
+
+                        dataList.Add(importClassroomModel);
+
+                        rowIndex++;
+                    }
+                    catch (Exception ex)
+                    {
+                        _importProgres.ImportError = true;
+                        _importProgres.ImportFinished = true;
+                        _importProgres.ErrorMessage = $"Ошибка при проверке данных. Строка: {rowIndex + 1}";
+                        throw new Exception(ex.Message);
+                    }
+                }
+
+                reader.Dispose();
+            }
+
+            using (var transaction = _context.Database.BeginTransaction())
+            {
+                try
+                {
+                    //Добавляем корпуса
+                    var buildingList = dataList
+                        .Select(s => s.BuildingName)
+                        .Distinct();
+
+                    foreach (var buildingName in buildingList)
+                    {
+                        await _buildingService.AddBuildingAsync(new BuildingDto
+                        {
+                            Name = buildingName
+                        });
+                    }
+
+                    //Добавляем типы аудиторий
+                    var classroomTypeList = dataList
+                        .Select(s => s.ClassroomType)
+                        .Distinct();
+
+                    foreach (var classroomType in classroomTypeList)
+                    {
+                        await _classroomTypeService.AddClassroomTypeAsync(new ClassroomTypeDto
+                        {
+                            Name = classroomType
+                        });
+                    }
+
+
+                    foreach (var row in dataList)
+                    {
+                        var building = await _context.ClassroomTypes.FirstOrDefaultAsync(e => e.Name == row.ClassroomType.Trim().ToUpper());
+
+                        var classtoomType = await _context.ClassroomTypes.FirstOrDefaultAsync(s => s.Name == row.ClassroomType.Trim().ToUpper());
+
+
+                        if (!string.IsNullOrEmpty(row.ClassroomName))
+                        {
+                            await _classroomService.AddClassroomAsync(new ClassroomDto
+                            {
+                                BuildingId = building.Id,
+                                ClassroomTypeId = classtoomType.Id,
+                                Name = row.ClassroomName.Trim().ToUpper(),
+                                SeatsCount = row.SeatsCount,
+                                
+                            });
+                        }
+
 
                         _importProgres.CheckedLessonCount++;
                     }

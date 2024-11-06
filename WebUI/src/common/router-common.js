@@ -5,7 +5,7 @@ import Login from '../components/Login';
 import User from '../components/User';
 import NotFound from '../components/NotFound';
 import Contacts from '../components/Contacts';
-import DataImport from '../components/admin/DataImport';
+import Import from '../components/admin/Import';
 import Version from '../components/admin/Version';
 import DataManage from '../components/admin/DataManage';
 import EmployeeList from '../components/admin/EmployeeList';
@@ -36,7 +36,7 @@ export const router = new VueRouter({
     { path: `${GuestRouteEnum.userSlash}`, name: "userSlash", component: User },
 
     //admin route
-    { path: `${AdminRouteEnum.dataImport}`, name: "dataImport", component: DataImport, meta: { authorize: [Role.Admin] } },
+    { path: `${AdminRouteEnum.import}`, name: "import", component: Import, meta: { authorize: [Role.Admin] } },
     { path: `${AdminRouteEnum.dataManage}`, name: "dataManage", component: DataManage, meta: { authorize: [Role.Admin] } },
     { path: `${AdminRouteEnum.employeeList}`, name: "employeeList", component: EmployeeList, meta: { authorize: [Role.Admin] } },
     { path: `${AdminRouteEnum.version}`, name: "version", component: Version, meta: { authorize: [Role.Admin] } },

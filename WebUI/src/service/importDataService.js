@@ -19,6 +19,25 @@ export function ImportTimetableData(importingFile, versionId) {
   });
 }
 
+export function ImportClassroomList(importingFile, versionId) {
+  const url = 'Import/ImportClassroomList';
+  return new Promise((resolve, reject) => {
+    timetableAPI.post(url, importingFile, {
+      params:{
+        versionId: versionId
+      },
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    })
+      .then(response => {
+        return resolve(response);
+      }).catch(error => {
+        return reject(error);
+      });
+  });
+}
+
 export function GetImportProgress() {
   const url = 'Import/GetImportProgress';
   return new Promise((resolve, reject) => {

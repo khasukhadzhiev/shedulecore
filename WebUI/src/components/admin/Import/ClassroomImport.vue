@@ -1,32 +1,14 @@
 <template v-if="$Role.EmployeeHasRole('admin')">
-  <div class="import-content">
-    <h5 class="mt-2 text-left">Импорт данных</h5>
-    <template v-if="versionList.length > 0">
+  <div>
+    <template>
       <div class="text-left mt-3" v-if="!importProgress.inProcess">
-        <label>Выберите версию расписания и файл для импорта</label>
-        <div class="row">
-          <div class="col-5 text-left">
-              <div class="mr-5">Версия расписания</div>
-              <multiselect
-                v-model="version"
-                :options="versionList"
-                :allowEmpty="false"
-                track-by="id"
-                label="name"
-                :show-labels="false"
-                placeholder="Выбрать версию расписания"
-                :multiple="false"
-              >
-                <template slot="noResult">Версия не найдена!</template>
-              </multiselect>              
-          </div>
-        </div>
+        <label>Выберите файл для импорта аудиторий</label>
         <div class="row mt-3">
           <div class="col-5">
             <b-form-file
               v-model="importingFile"
               :state="Boolean(importingFile)"
-              placeholder="Выберите файл для импорта данных"
+              placeholder="Выберите файл для импорта аудиторий"
               browse-text="Выбрать"
             ></b-form-file>
           </div>
@@ -43,7 +25,7 @@
       </div>
       <template v-else>
         <div class="row">
-          <div class="col text-left mb-3">
+          <div class="col text-left mb-3 mt-3">
             <b-button
               variant="outline-secondary"
               class="mr-3"
@@ -69,15 +51,10 @@
         </template>
       </template>
     </template>
-    <template v-else>
-      <div class="text-center mt-5">
-        <h5>Чтобы импортировать данные, добавьте хотя бы одну версию расписания!</h5>
-      </div>      
-    </template>
     <template>
       <div class="text-left mt-5 mb-3">
         <label>Структура импортируемого файла приведена ниже. 
-          <br/>Каждая строка представляет с собой отдельное занятие группы. 
+          <br/>Каждая строка представляет с собой отдельную аудиторию. 
           <br/>Регистр букв в импортируемом файле не учитывается.
           <br/>Учитывать, что первая строка файла при импорте не используется, импорт идет начиная с второй строки.
         </label>
@@ -87,20 +64,10 @@
       <table id="exampleFileStruct" class="small table-bordered">
         <thead>
           <tr>
-            <th>Подразделение</th>
-            <th>Группа</th>
-            <th>Количество обучающихся группы</th>
-            <th>ФИО преподавателя (полностью)</th>
-            <th>Дисциплина</th>
-            <th>Вид занятия <br/><small>(Один из следующих видов: Лекция, Лабораторная, Практическое,Семинарское)</small></th>
-            <th>Занятие подгруппы <br/><small>(Ставить "1" если да и "0" если нет)</small></th>
-            <th>Занятие по одной неделе	<br/><small>(Ставить "1" если да и "0" если нет)</small></th>
-            <th>Параллель <br/><small>(Ставить "1" если да и "0" если нет)</small></th>
-            <th>Поток <br/><small>(Ставить "1" если да и "0" если нет)</small></th>
-            <th>Группы потока	<br/><small>(Наименование групп через запятую, включая данную группу)</small></th>
-            <th>Смена	<br/><small>(Одна из следующих видов: Первая, Вторая, Третья, Четвертая)</small></th>
-            <th>Форма обучения <br/><small>(Одна из следующих форм: Очная, Заочная, Очно-заочная)</small></th>
-            <th>Отчетность<br/><small>(Один из следующих видов: Экзамен, Зачет, Зачет с оценкой)</small></th>
+            <th>Корпус</th>
+            <th>Тип аудитории</th>
+            <th>Наименование</th>
+            <th>Количество посадочных мест</th>
           </tr>
         </thead>
         <tbody>
@@ -109,48 +76,18 @@
             <td>ПИ-19	</td>
             <td>25</td>
             <td>Плиева Мадина Валерьевна</td>
-            <td>Русский язык</td>
-            <td>Практическое</td>
-            <td>0</td>
-            <td>0</td>
-            <td>0</td>
-            <td>0</td>
-            <td></td>
-            <td>ПЕРВАЯ</td>
-            <td>ОЧНАЯ</td>
-            <td>Экзамен</td>
           </tr>
           <tr>
             <td>ФАКУЛЬТЕТ ИНФОРМАЦИОННЫХ ТЕХНОЛОГИЙ</td>
             <td>БИ-19</td>
             <td>28</td>
             <td>Бегуев Сулейман Ахятьевич</td>
-            <td>ЧЕЧЕНСКАЯ ТРАДИЦИОННАЯ КУЛЬТУРА И ЭТИКА</td>
-            <td>ЛЕКЦИЯ</td>
-            <td>0</td>
-            <td>1</td>
-            <td>0</td>
-            <td>1</td>
-            <td>ПИ-19-1,ПИ-19-2,ИТИСС-19,БИ-19</td>
-            <td>ПЕРВАЯ</td>
-            <td>ОЧНАЯ</td>
-            <td>Зачет</td>
           </tr>
           <tr>
             <td>ФАКУЛЬТЕТ ИНОСТРАННЫХ ЯЗЫКОВ</td>
             <td>Ин.ЯЗ-19</td>
             <td>28</td>
             <td>Гузуева Элина Руслановна</td>
-            <td>ИНФОРМАТИКА</td>
-            <td>ЛЕКЦИЯ</td>
-            <td>0</td>
-            <td>0</td>
-            <td>0</td>
-            <td>0</td>
-            <td></td>
-            <td>ПЕРВАЯ</td>
-            <td>ОЧНАЯ</td>
-            <td>Зачет с оценкой</td>
           </tr>          
         </tbody>
       </table>      
@@ -160,14 +97,13 @@
 
 <script>
 import {
-  ImportTimetableData,
+  ImportClassroomList,
   GetImportProgress,
   RemoveImportProgress
-} from "../../service/importDataService";
-import { GetVersionList } from "../../service/versionService";
+} from "../../../service/importDataService";
 
 export default {
-  name: "DataImport",
+  name: "ClassroomImport",
   data: function() {
     return {
       importingFile: null,
@@ -200,7 +136,7 @@ export default {
       file.append("file", this.importingFile);
       this.importProgress.inProcess = true;
       this.importProgress.importFinished = false;
-      ImportTimetableData(file, this.version.id)
+      ImportClassroomList(file, this.version.id)
         .then(() => {
           this.$ntf.Success("Данные импортированы.");
         })
@@ -236,26 +172,9 @@ export default {
         .catch(error => {
           this.$ntf.Error("Неудалось удалить прогресс импорта.", error);
         });
-    },
-    getVersionList() {
-      this.isLoading = true;
-      GetVersionList()
-        .then(response => {
-          this.versionList = response.data;
-          if (response.data.length > 0) {
-            this.version = response.data.find(v => v.isActive);
-          }
-        })
-        .catch(error => {
-          this.$ntf.Error("Неудалось получить данные.", error);
-        })
-        .finally(() => {
-          this.isLoading = false;
-        });
     }
   },
   created() {
-    this.getVersionList();
     this.getImportProgress();
   },
   props: {}

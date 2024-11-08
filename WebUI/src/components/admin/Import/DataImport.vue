@@ -156,6 +156,7 @@ import {
   GetImportProgress,
   RemoveImportProgress
 } from "../../../service/importDataService";
+import { GetVersionList } from "../../../service/versionService";
 
 export default {
   name: "DataImport",
@@ -228,8 +229,25 @@ export default {
           this.$ntf.Error("Неудалось удалить прогресс импорта.", error);
         });
     },
+    getVersionList() {
+      this.isLoading = true;
+      GetVersionList()
+        .then(response => {
+          this.versionList = response.data;
+          if (response.data.length > 0) {
+            this.version = response.data.find(v => v.isActive);
+          }
+        })
+        .catch(error => {
+          this.$ntf.Error("Неудалось получить данные.", error);
+        })
+        .finally(() => {
+          this.isLoading = false;
+        });
+    }
   },
   created() {
+    this.getVersionList();
     this.getImportProgress();
   },
   props: {}

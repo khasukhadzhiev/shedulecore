@@ -2,9 +2,7 @@
 using DinkToPdf;
 using DinkToPdf.Contracts;
 using DTL.Dto;
-using System.IO;
 using System.Runtime.InteropServices;
-using System.Threading.Tasks;
 using BL.ServiceInterface;
 
 namespace BL.Services
@@ -18,7 +16,7 @@ namespace BL.Services
         }
 
         ///<inheritdoc/>
-        public async Task<Stream> SaveScheduleToPdfAsync(SavFileModelDto saveFileModelDto)
+        public async Task<Stream> SaveTimetableToXlsxAsync(SavFileModelDto saveFileModelDto)
         {
             string style = @"<style>
                             .timetable{border-spacing:0px;border-collapse: collapse; text-align:center; margin: 0px;}
@@ -95,7 +93,7 @@ namespace BL.Services
         }
 
         ///<inheritdoc/>
-        public async Task<Stream> SaveScheduleReportingToPdfAsync(SavFileModelDto pdfSaveModelDto)
+        public async Task<Stream> SaveTimetableReportingToPdfAsync(SavFileModelDto saveFileModelDto)
         {
             string style = @"<style>
                             .reporting-timetable { border-spacing:0px; border-collapse: collapse; text-align:center; border: 1px solid rgb(105, 105, 105); padding: 5px;}
@@ -137,7 +135,7 @@ namespace BL.Services
                     Objects = {
                         new ObjectSettings() {
                             PagesCount = true,
-                            HtmlContent = pdfSaveModelDto.Html + style,
+                            HtmlContent = saveFileModelDto.Html + style,
                             WebSettings = { DefaultEncoding = "utf-8" },
                         }
                     }
@@ -155,6 +153,13 @@ namespace BL.Services
             return await task;
         }
 
-
+        ///<inheritdoc/>
+        public async Task<Stream> SaveScheduleToXlsxAsync(SavFileModelDto saveFileModelDto)
+        {
+            return await Task.Run(() =>
+            {
+                return new MemoryStream(); //Добавил пустышку.
+            });
+        }
     }
 }

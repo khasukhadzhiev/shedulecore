@@ -11,15 +11,20 @@ namespace BL.ServiceInterface
         /// </summary>
         /// <param name="savFileModelDto">Объект с данными для генерации PDF</param>
         /// <returns></returns>
-        Task<Stream> SaveScheduleToPdfAsync(SavFileModelDto savFileModelDto);
+        Task<Stream> SaveTimetableToXlsxAsync(SavFileModelDto savFileModelDto);
 
         /// <summary>
         /// Сохранить расписание отчетностей в Pdf
         /// </summary>
         /// <param name="savFileModelDto">Объект с данными для генерации PDF</param>
         /// <returns></returns>
-        Task<Stream> SaveScheduleReportingToPdfAsync(SavFileModelDto savFileModelDto);
+        Task<Stream> SaveTimetableReportingToPdfAsync(SavFileModelDto savFileModelDto);
 
-
+        /// <summary>
+        /// Сохранить расписание в xlsx
+        /// </summary>
+        /// <param name="savFileModelDto">Объект с данными для генерации PDF</param>
+        /// <returns></returns>
+        Task<Stream> SaveScheduleToXlsxAsync(SavFileModelDto savFileModelDto);
     }
 }

@@ -53,11 +53,18 @@
       <div class="row mb-2">
         <div class="col text-left">
           <b-button
-            class="reset-btn"
+            class="reset-btn mr-2"
             size="sm"
             variant="outline-info"
             @click="saveTimetableToPdf()"
             >Сохранить в PDF</b-button
+          >
+          <b-button
+            class="reset-btn"
+            size="sm"
+            variant="outline-info"
+            @click="saveTimetableToExcel()"
+            >Сохранить в Excel</b-button
           >
         </div>
       </div>
@@ -299,6 +306,7 @@ import { lessonVolumeEnum } from "../enums/lessonVolumeEnum";
 import {
   SaveTimetableToPdf,
   SaveTimetableReportingToPdf,
+  SaveTimetableToXlsx
 } from "../service/exportService";
 
 export default {
@@ -481,6 +489,32 @@ export default {
         })
         .catch((error) => {
           this.$ntf.Error("Неудалось получить pdf.", error);
+        })
+        .finally(() => {
+          this.isLoading = false;
+        });
+    },
+
+    saveTimetableToExcel() {
+      let element = document.getElementById("timetable-table");
+      let outerHTML = element.outerHTML;
+
+      let xlsxSaveModelDto = {
+        html: outerHTML,
+        name: "Расписание " + this.queryList.join().toUpperCase(),
+      };
+
+      this.isLoading = true;
+      SaveTimetableToXlsx(xlsxSaveModelDto)
+        .then((response) => {
+          let blob = new Blob([response.data], { type: "application/vnd.ms-excel" });
+          let link = document.createElement("a");
+          link.href = window.URL.createObjectURL(blob);
+          link.download = "Расписание " + this.queryList.join().toUpperCase();
+          link.click();
+        })
+        .catch((error) => {
+          this.$ntf.Error("Неудалось получить Excel файл.", error);
         })
         .finally(() => {
           this.isLoading = false;

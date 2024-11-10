@@ -38,3 +38,21 @@ export function SaveTimetableToPdf(pdfSaveModelDto) {
     });
   }
   
+  export function SaveTimetableToXlsx(pdfSaveModelDto) {
+    const url = 'Export/SaveTimetableToXlsx';
+    return new Promise((resolve, reject) => {
+      timetableAPI.post(url, pdfSaveModelDto,
+        {
+            responseType: 'arraybuffer',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/pdf'
+            }
+        })
+        .then(response => {
+          return resolve(response);
+        }).catch(error => {
+          return reject(error);
+        });
+    });
+  }

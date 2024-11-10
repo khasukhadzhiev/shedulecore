@@ -22,7 +22,7 @@ namespace CoreAPI.Controllers
         [Route("SaveTimetableToPdf")]
         public async Task<FileStreamResult> SaveTimetableToPdf(SavFileModelDto saveFileModelDto)
         {
-            var pdfStream = await _exportService.SaveTimetableToXlsxAsync(saveFileModelDto);
+            var pdfStream = await _exportService.SaveTimetableToPdfAsync(saveFileModelDto);
 
             return File(pdfStream, "application/pdf");
         }
@@ -40,9 +40,15 @@ namespace CoreAPI.Controllers
         [Route("SaveTimetableToXlsx")]
         public async Task<FileStreamResult> SaveTimetableToXlsx(SavFileModelDto saveFileModelDto)
         {
+            if (saveFileModelDto.Name.Length > 150)
+            {
+                saveFileModelDto.Name = saveFileModelDto.Name.Substring(0, 150);
+            }
+
             var xlsxStream = await _exportService.SaveTimetableToXlsxAsync(saveFileModelDto);
 
-            return File(xlsxStream, "application/vnd.ms-excel");
+            return File(xlsxStream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+
         }
     }
 }

@@ -507,10 +507,11 @@ export default {
       this.isLoading = true;
       SaveTimetableToXlsx(xlsxSaveModelDto)
         .then((response) => {
-          let blob = new Blob([response.data], { type: "application/vnd.ms-excel" });
+          let fileName = xlsxSaveModelDto.name.Length > 150 ? xlsxSaveModelDto.name.Substring(0, 25) : xlsxSaveModelDto.name;
+          let blob = new Blob([response.data], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
           let link = document.createElement("a");
           link.href = window.URL.createObjectURL(blob);
-          link.download = "Расписание " + this.queryList.join().toUpperCase();
+          link.download = fileName.toUpperCase();
           link.click();
         })
         .catch((error) => {

@@ -254,11 +254,18 @@
       <div class="row mb-2">
         <div class="col text-left">
           <b-button
-            class="reset-btn"
+            class="reset-btn mr-2"
             size="sm"
             variant="outline-info"
             @click="saveReportingToPdf()"
             >Сохранить в PDF</b-button
+          >
+          <b-button
+            class="reset-btn"
+            size="sm"
+            variant="outline-info"
+            @click="saveTimetableReportingToExcel()"
+            >Сохранить в Excel</b-button
           >
         </div>
       </div>
@@ -306,7 +313,8 @@ import { lessonVolumeEnum } from "../enums/lessonVolumeEnum";
 import {
   SaveTimetableToPdf,
   SaveTimetableReportingToPdf,
-  SaveTimetableToXlsx
+  SaveTimetableToXlsx,
+  SaveTimetableReportingToXlsx
 } from "../service/exportService";
 
 export default {
@@ -449,7 +457,7 @@ export default {
 
       let pdfSaveModelDto = {
         html: outerHTML,
-        name: "Расписание " + this.queryList.join().toUpperCase(),
+        name: "Расписание " + this.queryList.join().Length > 150 ? this.queryList.join().Substring(0, 150).toUpperCase() : this.queryList.join().toUpperCase(),
       };
 
       this.isLoading = true;
@@ -458,7 +466,7 @@ export default {
           let blob = new Blob([response.data], { type: "application/pdf" });
           let link = document.createElement("a");
           link.href = window.URL.createObjectURL(blob);
-          link.download = "Расписание " + this.queryList.join().toUpperCase();
+          link.download = pdfSaveModelDto.name.toUpperCase();
           link.click();
         })
         .catch((error) => {
@@ -474,7 +482,7 @@ export default {
       let outerHTML = element.outerHTML;
       let pdfSaveModelDto = {
         html: outerHTML,
-        name: "Расписание отчетностей" + this.queryList.join().toUpperCase(),
+        name: "Расписание отчетностей " + this.queryList.join().Length > 150 ? this.queryList.join().Substring(0, 150).toUpperCase() : this.queryList.join().toUpperCase(),
       };
 
       this.isLoading = true;
@@ -483,8 +491,7 @@ export default {
           let blob = new Blob([response.data], { type: "application/pdf" });
           let link = document.createElement("a");
           link.href = window.URL.createObjectURL(blob);
-          link.download =
-            "Расписание отчетностей" + this.queryList.join().toUpperCase();
+          link.download = pdfSaveModelDto.name.toUpperCase();
           link.click();
         })
         .catch((error) => {
@@ -501,17 +508,42 @@ export default {
 
       let xlsxSaveModelDto = {
         html: outerHTML,
-        name: "Расписание " + this.queryList.join().toUpperCase(),
+        name: "Расписание " + this.queryList.join().Length > 150 ? this.queryList.join().Substring(0, 150).toUpperCase() : this.queryList.join().toUpperCase(),
       };
 
       this.isLoading = true;
       SaveTimetableToXlsx(xlsxSaveModelDto)
         .then((response) => {
-          let fileName = xlsxSaveModelDto.name.Length > 150 ? xlsxSaveModelDto.name.Substring(0, 25) : xlsxSaveModelDto.name;
           let blob = new Blob([response.data], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
           let link = document.createElement("a");
           link.href = window.URL.createObjectURL(blob);
-          link.download = fileName.toUpperCase();
+          link.download = xlsxSaveModelDto.name.toUpperCase();
+          link.click();
+        })
+        .catch((error) => {
+          this.$ntf.Error("Неудалось получить Excel файл.", error);
+        })
+        .finally(() => {
+          this.isLoading = false;
+        });
+    },
+
+    saveTimetableReportingToExcel() {
+      let element = document.getElementById("reporting-timetable");
+      let outerHTML = element.outerHTML;
+
+      let xlsxSaveModelDto = {
+        html: outerHTML,
+        name: "Расписание отчетностей " + this.queryList.join().Length > 150 ? this.queryList.join().Substring(0, 150).toUpperCase() : this.queryList.join().toUpperCase(),
+      };
+
+      this.isLoading = true;
+      SaveTimetableReportingToXlsx(xlsxSaveModelDto)
+        .then((response) => {
+          let blob = new Blob([response.data], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+          let link = document.createElement("a");
+          link.href = window.URL.createObjectURL(blob);
+          link.download = xlsxSaveModelDto.name.toUpperCase();
           link.click();
         })
         .catch((error) => {

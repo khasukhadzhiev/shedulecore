@@ -201,6 +201,51 @@ namespace BL.Services
             });
         }
 
+        ///<inheritdoc/>
+        public async Task<Stream> SaveTimetableReportingToXlsxAsync(SavFileModelDto saveFileModelDto)
+        {
+            return await Task.Run(() =>
+            {
+                var memoryStream = new MemoryStream();
+
+                string sheetName = saveFileModelDto.Name.Length > 150 ? saveFileModelDto.Name.Substring(0, 25) : saveFileModelDto.Name;
+
+                // Парсинг HTML
+                var htmlDoc = new HtmlDocument();
+                htmlDoc.LoadHtml(saveFileModelDto.Html);
+
+                // Создание Excel-книги и рабочего листа
+                using (var workbook = new XLWorkbook())
+                {
+                    var worksheet = workbook.Worksheets.Add(sheetName);
+
+                    // Обработка HTML-контента и заполнение рабочего листа
+                    var tables = htmlDoc.DocumentNode.SelectNodes("//table");
+
+                    int currentRow = 1;
+
+                    if (tables != null)
+                    {
+                        foreach (var table in tables)
+                        {
+                            // Обработка каждой таблицы
+                            ProcessHtmlTable(table, worksheet, ref currentRow);
+                        }
+                    }
+
+                    // Убедимся, что MemoryStream пуст перед сохранением
+                    memoryStream.SetLength(0);
+
+                    // Сохраняем книгу в MemoryStream в формате XLSX
+                    workbook.SaveAs(memoryStream);
+
+                    // Сбрасываем позицию в начале потока
+                    memoryStream.Position = 0;
+                }
+
+                return memoryStream;
+            });
+        }
 
         private void ProcessHtmlTable(HtmlNode tableNode, IXLWorksheet worksheet, ref int currentRow)
         {

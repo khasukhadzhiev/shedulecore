@@ -50,5 +50,20 @@ namespace CoreAPI.Controllers
             return File(xlsxStream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
 
         }
+
+        [HttpPost]
+        [Route("SaveTimetableReportingToXlsx")]
+        public async Task<FileStreamResult> SaveTimetableReportingToXlsx(SavFileModelDto saveFileModelDto)
+        {
+            if (saveFileModelDto.Name.Length > 150)
+            {
+                saveFileModelDto.Name = saveFileModelDto.Name.Substring(0, 150);
+            }
+
+            var xlsxStream = await _exportService.SaveTimetableReportingToXlsxAsync(saveFileModelDto);
+
+            return File(xlsxStream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+
+        }
     }
 }

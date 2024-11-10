@@ -9,24 +9,24 @@ using BL.ServiceInterface;
 
 namespace BL.Services
 {
-    public class PdfService : IPdfService
+    public class ExportService : IExportService
     {
         private readonly IConverter _convertor;
-        public PdfService(IConverter convertor)
+        public ExportService(IConverter convertor)
         {
             _convertor = convertor;
         }
 
         ///<inheritdoc/>
-        public async Task<Stream> SaveScheduleToPdfAsync(PdfSaveModelDto pdfSaveModelDto)
+        public async Task<Stream> SaveScheduleToPdfAsync(SavFileModelDto saveFileModelDto)
         {
             string style = @"<style>
-                            .schedule{border-spacing:0px;border-collapse: collapse; text-align:center;}
-                            .schedule th {  border: 1px solid black;  padding: 1px;  font-size: 10px;}
-                            .schedule th:nth-child(1) {  border: 1px solid black;  padding: 1px;  max-width: 30px;}
-                            .schedule th:nth-child(3) {  width: 150px;}
-                            .schedule tr,td {  border: 1px solid black;  padding: 2px;}
-                            .schedule tr {  height: 1.15rem;}
+                            .timetable{border-spacing:0px;border-collapse: collapse; text-align:center; margin: 0px;}
+                            .timetable th {  border: 1px solid black;  padding: 1px;  font-size: 10px;}
+                            .timetable th:nth-child(1) {  border: 1px solid black;  padding: 1px;  max-width: 30px;}
+                            .timetable th:nth-child(3) {  width: 150px;}
+                            .timetable tr,td {  border: 1px solid black; border-spacing:0px;border-collapse: collapse;}
+                            .timetable tr {  height: 1.15rem;}
                             .td-style {  max-width: 6rem;  width: 6rem;  min-width: 6rem;  height: .5rem;  font-size: 8px;}
                             .rotated 
                                     {  
@@ -37,9 +37,9 @@ namespace BL.Services
                                         -webkit-transform: rotate(270deg); /* Chrome, Safari, Opera */  
                                         transform: rotate(270deg);
                                     }
-                            .schedule-border {  border: 1px solid black;}
-                            .schedule-border-right {  border-right: 1px solid black;}
-                            .schedule-border-bottom {  border-bottom: 1px solid black;}
+                            .timetable-border {  border: 1px solid black;}
+                            .timetable-border-right {  border-right: 1px solid black;}
+                            .timetable-border-bottom {  border-bottom: 1px solid black;}
                             </style>";
 
             Task<Stream> task = new Task<Stream>(() =>
@@ -75,7 +75,7 @@ namespace BL.Services
                     Objects = {
                         new ObjectSettings() {
                             PagesCount = true,
-                            HtmlContent = pdfSaveModelDto.Html + style,
+                            HtmlContent = saveFileModelDto.Html + style,
                             WebSettings = { DefaultEncoding = "utf-8" },
 
                         }
@@ -95,13 +95,13 @@ namespace BL.Services
         }
 
         ///<inheritdoc/>
-        public async Task<Stream> SaveScheduleReportingToPdfAsync(PdfSaveModelDto pdfSaveModelDto)
+        public async Task<Stream> SaveScheduleReportingToPdfAsync(SavFileModelDto pdfSaveModelDto)
         {
             string style = @"<style>
-                            .reporting-schedule { border-spacing:0px; border-collapse: collapse; text-align:center; border: 1px solid rgb(105, 105, 105); padding: 5px;}
-                            .reporting-schedule th, td {text-align:center; border: 1px solid rgb(105, 105, 105); padding: 5px;}
-                            .reporting-schedule td:nth-child(2), td:nth-child(6), td:nth-child(7){ white-space: nowrap;}
-                            .reporting-schedule td:nth-child(3), td:nth-child(4){ text-align: left;}
+                            .reporting-timetable { border-spacing:0px; border-collapse: collapse; text-align:center; border: 1px solid rgb(105, 105, 105); padding: 5px;}
+                            .reporting-timetable th, td {text-align:center; border: 1px solid rgb(105, 105, 105); padding: 5px;}
+                            .reporting-timetable td:nth-child(2), td:nth-child(6), td:nth-child(7){ white-space: nowrap;}
+                            .reporting-timetable td:nth-child(3), td:nth-child(4){ text-align: left;}
                             </style>";
 
             Task<Stream> task = new Task<Stream>(() =>
@@ -154,5 +154,7 @@ namespace BL.Services
 
             return await task;
         }
+
+
     }
 }

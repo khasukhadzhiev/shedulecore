@@ -13,7 +13,7 @@ namespace BL.Services
             services.AddTransient<ILessonService, LessonService>();
             services.AddTransient<IMistakeService, MistakeService>();
             services.AddTransient<IUserService, UserService>();
-            services.AddTransient<IPdfService, PdfService>();
+            services.AddTransient<IExportService, ExportService>();
             services.AddTransient<IImportService, ImportService>();
             services.AddTransient<IStudyClassService, StudyClassService>();
             services.AddTransient<ISubjectService, SubjectService>();

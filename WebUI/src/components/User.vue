@@ -299,7 +299,7 @@ import { lessonVolumeEnum } from "../enums/lessonVolumeEnum";
 import {
   SaveTimetableToPdf,
   SaveTimetableReportingToPdf,
-} from "../service/pdfService";
+} from "../service/exportService";
 
 export default {
   name: "User",

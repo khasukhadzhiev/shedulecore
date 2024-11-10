@@ -1,7 +1,7 @@
 import { timetableAPI } from '../common/axios-common';
 
 export function SaveTimetableToPdf(pdfSaveModelDto) {
-    const url = 'Pdf/SaveTimetableToPdf';
+    const url = 'Export/SaveTimetableToPdf';
     return new Promise((resolve, reject) => {
       timetableAPI.post(url, pdfSaveModelDto,
         {
@@ -20,7 +20,7 @@ export function SaveTimetableToPdf(pdfSaveModelDto) {
   }
 
   export function SaveTimetableReportingToPdf(pdfSaveModelDto) {
-    const url = 'Pdf/SaveTimetableReportingToPdf';
+    const url = 'Export/SaveTimetableReportingToPdf';
     return new Promise((resolve, reject) => {
       timetableAPI.post(url, pdfSaveModelDto,
         {

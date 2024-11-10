@@ -1,6 +1,6 @@
 ﻿namespace DTL.Dto
 {
-    public class PdfSaveModelDto
+    public class SavFileModelDto
     {
         /// <summary>
         /// Html код

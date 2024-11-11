@@ -257,17 +257,22 @@ namespace BL.Services
 
             int rowIndex = currentRow;
 
+            int maxColIndex = 0;
+
             foreach (var rowNode in rowNodes)
             {
                 int colIndex = 1;
 
                 var cellNodes = rowNode.SelectNodes("./th|./td");
                 if (cellNodes == null)
+                {
+                    rowIndex++;
                     continue;
+                }
 
                 foreach (var cellNode in cellNodes)
                 {
-                    // Adjust for cells occupied due to rowspan and colspan from previous cells
+                    // Корректировка для занятых ячеек
                     while (occupiedCells.Contains((rowIndex, colIndex)))
                     {
                         colIndex++;
@@ -278,20 +283,28 @@ namespace BL.Services
 
                     var cell = worksheet.Cell(rowIndex, colIndex);
 
-                    // Set cell value
+                    // Установка значения ячейки
                     cell.Value = cellNode.InnerText.Trim();
 
-                    // Apply formatting (e.g., borders, styles)
+                    // Обновление максимального индекса столбца
+                    if (colIndex + colSpan - 1 > maxColIndex)
+                        maxColIndex = colIndex + colSpan - 1;
+
+                    // Применение форматирования ячейки
                     ApplyCellFormatting(cell, cellNode);
 
-                    // Handle merged cells
+                    // Обработка объединенных ячеек
                     if (rowSpan > 1 || colSpan > 1)
                     {
                         var lastCell = worksheet.Cell(rowIndex + rowSpan - 1, colIndex + colSpan - 1);
                         worksheet.Range(cell, lastCell).Merge();
+
+                        // Применяем границы к объединенному диапазону
+                        var mergedRange = worksheet.Range(cell, lastCell);
+                        ApplyBordersToRange(mergedRange);
                     }
 
-                    // Mark occupied cells
+                    // Отмечаем занятые ячейки
                     for (int i = 0; i < rowSpan; i++)
                     {
                         for (int j = 0; j < colSpan; j++)
@@ -300,16 +313,55 @@ namespace BL.Services
                         }
                     }
 
-                    colIndex++;
+                    // Увеличиваем colIndex на величину colSpan
+                    colIndex += colSpan;
                 }
 
                 rowIndex++;
             }
 
+            int lastRowIndex = rowIndex - 1;
+
+            // Применение границ ко всем пустым ячейкам в таблице
+            ApplyBordersToEmptyCells(worksheet, currentRow, lastRowIndex, maxColIndex);
+
             currentRow = rowIndex;
         }
 
-        //Получения атрибутов тега
+        private void ApplyBordersToRange(IXLRange range)
+        {
+            // Устанавливаем тонкие границы вокруг диапазона
+            range.Style.Border.SetInsideBorder(XLBorderStyleValues.Thin);
+            range.Style.Border.SetInsideBorderColor(XLColor.Black);
+
+            range.Style.Border.SetOutsideBorder(XLBorderStyleValues.Thin);
+            range.Style.Border.SetOutsideBorderColor(XLColor.Black);
+        }
+
+        private void ApplyBordersToEmptyCells(IXLWorksheet worksheet, int startRow, int endRow, int maxColIndex)
+        {
+            for (int row = startRow; row <= endRow; row++)
+            {
+                for (int col = 1; col <= maxColIndex; col++)
+                {
+                    var cell = worksheet.Cell(row, col);
+                    if (cell.IsEmpty() && !cell.IsMerged())
+                    {
+                        // Устанавливаем тонкие границы для пустой ячейки
+                        cell.Style.Border.TopBorder = XLBorderStyleValues.Thin;
+                        cell.Style.Border.BottomBorder = XLBorderStyleValues.Thin;
+                        cell.Style.Border.LeftBorder = XLBorderStyleValues.Thin;
+                        cell.Style.Border.RightBorder = XLBorderStyleValues.Thin;
+
+                        cell.Style.Border.TopBorderColor = XLColor.Black;
+                        cell.Style.Border.BottomBorderColor = XLColor.Black;
+                        cell.Style.Border.LeftBorderColor = XLColor.Black;
+                        cell.Style.Border.RightBorderColor = XLColor.Black;
+                    }
+                }
+            }
+        }
+
         private int GetAttributeValueAsInt(HtmlNode node, string attributeName, int defaultValue)
         {
             if (node.Attributes[attributeName] != null)
@@ -322,84 +374,32 @@ namespace BL.Services
             return defaultValue;
         }
 
-        //Метод для применения форматирования html к ячейкам Excel
         private void ApplyCellFormatting(IXLCell cell, HtmlNode cellNode)
         {
-            // Apply borders on all sides
-            cell.Style.Border.TopBorder = XLBorderStyleValues.Thin;
-            cell.Style.Border.BottomBorder = XLBorderStyleValues.Thin;
-            cell.Style.Border.LeftBorder = XLBorderStyleValues.Thin;
-            cell.Style.Border.RightBorder = XLBorderStyleValues.Thin;
+            IXLRange range;
+            if (cell.IsMerged())
+            {
+                range = cell.MergedRange();
+            }
+            else
+            {
+                range = cell.AsRange();
+            }
 
-            cell.Style.Border.TopBorderColor = XLColor.Black;
-            cell.Style.Border.BottomBorderColor = XLColor.Black;
-            cell.Style.Border.LeftBorderColor = XLColor.Black;
-            cell.Style.Border.RightBorderColor = XLColor.Black;
+            // Применение тонких границ вокруг диапазона
+            range.Style.Border.SetInsideBorder(XLBorderStyleValues.Thin);
+            range.Style.Border.SetInsideBorderColor(XLColor.Black);
 
-            // Apply additional formatting if needed (e.g., font styles, background colors)
+            range.Style.Border.SetOutsideBorder(XLBorderStyleValues.Thin);
+            range.Style.Border.SetOutsideBorderColor(XLColor.Black);
+
+            // Применение дополнительного форматирования при необходимости
             if (cellNode.Attributes["style"] != null)
             {
                 var style = cellNode.Attributes["style"].Value;
-                ApplyStyle(cell, style);
+                //ApplyStyle(range, style);
             }
         }
 
-        //Метод для применения стилей html к ячейкам Excel
-        private void ApplyStyle(IXLCell cell, string style)
-        {
-            var styles = style.Split(';');
-            foreach (var s in styles)
-            {
-                var keyValue = s.Split(':');
-                if (keyValue.Length != 2)
-                    continue;
-
-                var key = keyValue[0].Trim().ToLower();
-                var value = keyValue[1].Trim().ToLower();
-
-                switch (key)
-                {
-                    case "background-color":
-                        try
-                        {
-                            cell.Style.Fill.BackgroundColor = XLColor.FromHtml(value);
-                        }
-                        catch
-                        {
-                            // Handle invalid color
-                        }
-                        break;
-                    case "color":
-                        try
-                        {
-                            cell.Style.Font.FontColor = XLColor.FromHtml(value);
-                        }
-                        catch
-                        {
-                            // Handle invalid color
-                        }
-                        break;
-                    case "font-weight":
-                        if (value == "bold")
-                        {
-                            cell.Style.Font.Bold = true;
-                        }
-                        break;
-                    case "text-decoration":
-                        if (value.Contains("underline"))
-                        {
-                            cell.Style.Font.Underline = XLFontUnderlineValues.Single;
-                        }
-                        break;
-                    case "font-style":
-                        if (value == "italic")
-                        {
-                            cell.Style.Font.Italic = true;
-                        }
-                        break;
-                        // Add more styles as needed
-                }
-            }
-        }
     }
 }

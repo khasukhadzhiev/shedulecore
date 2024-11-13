@@ -351,7 +351,7 @@ export default {
   },
   computed: {
     week() {
-      return moment(this.now).isoWeek() % 2 == 0 ? 2 : 1;
+      return moment(this.now).isoWeek() % 2 == 0 ? 1 : 2;
     },
     dayOfWeek() {
       return moment(this.now).format("dddd");

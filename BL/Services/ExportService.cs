@@ -162,7 +162,7 @@ namespace BL.Services
             {
                 var memoryStream = new MemoryStream();
 
-                string sheetName = saveFileModelDto.Name.Length > 150 ? saveFileModelDto.Name.Substring(0, 25) : saveFileModelDto.Name;
+                string sheetName = saveFileModelDto.Name.Length > 25 ? saveFileModelDto.Name.Substring(0, 25) : saveFileModelDto.Name;
 
                 // Парсинг HTML
                 var htmlDoc = new HtmlDocument();
@@ -208,7 +208,7 @@ namespace BL.Services
             {
                 var memoryStream = new MemoryStream();
 
-                string sheetName = saveFileModelDto.Name.Length > 150 ? saveFileModelDto.Name.Substring(0, 25) : saveFileModelDto.Name;
+                string sheetName = saveFileModelDto.Name.Length > 25 ? saveFileModelDto.Name.Substring(0, 25) : saveFileModelDto.Name;
 
                 // Парсинг HTML
                 var htmlDoc = new HtmlDocument();

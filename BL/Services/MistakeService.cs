@@ -10,12 +10,15 @@ using System.Threading.Tasks;
 using BL.ServiceInterface;
 using DAL;
 using Version = DAL.Entities.Version;
+using Infrastructure.Models;
 
 namespace BL.Services
 {
     public class MistakeService : IMistakeService
     {
         private readonly ScheduleHighSchoolDb _context;
+
+        private List<string> dayNames = new List<string> { "Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье" };
 
         public MistakeService(ScheduleHighSchoolDb context)
         {
@@ -26,7 +29,7 @@ namespace BL.Services
         ///<inheritdoc/>
         public async Task<List<string>> GetMistakesByStudyClassAsync(int studyClassId, int versionId)
         {
-            ConcurrentBag<string> result = new ConcurrentBag<string>();
+            ConcurrentBag<MistakeListModel> mistakeListResult = new ConcurrentBag<MistakeListModel>();
 
             var version = await _context.Versions.FirstOrDefaultAsync(v => v.Id == versionId);
 
@@ -41,6 +44,7 @@ namespace BL.Services
 
             var studyClassLessons = _context.Lessons
                 .Include(l => l.StudyClass)
+                .Where(l => l.VersionId == versionId)
                 .Where(l => l.RowIndex != null)
                 .Where(l => l.StudyClassId == studyClassId && l.StudyClass.ClassShiftId == studyClass.ClassShiftId);
 
@@ -60,9 +64,7 @@ namespace BL.Services
                                     || (l.ClassroomId == l2.ClassroomId && l.ClassroomId != null && l2.ClassroomId != null)))
                 .ToListAsync();
 
-            //TODO
-            //Parallel.ForEach пропускает некоторые итерации из-за этого пропускаются накладки. 
-            //Необходимо решить проблему либо изменить код не теряя производительность.
+
             Parallel.ForEach(intersectLessons, lesson =>
             {
                 var rowIndexSecond = lesson.RowIndex >= 0 && lesson.RowIndex % 2 != 0 ? lesson.RowIndex - 1 : lesson.RowIndex + 1;
@@ -71,7 +73,7 @@ namespace BL.Services
 
                 if (!lesson.IsSubClassLesson && !lesson.IsSubWeekLesson)
                 {
-                    conditionString.Append($"(RowIndex == {lesson.RowIndex})");
+                    conditionString.Append($"(RowIndex == {lesson.RowIndex}" + (version.UseSubWeek ? $" || RowIndex == {rowIndexSecond}" : "") + ")");
                     conditionString.Append($" AND ((ClassroomId == {lesson.ClassroomId ?? -1} || TeacherId == {lesson.TeacherId}))");
                     conditionString.Append($" AND ((FlowId == null AND  {lesson.FlowId == null}) || FlowId != {lesson.FlowId ?? -1})");
                 }
@@ -83,44 +85,62 @@ namespace BL.Services
                 }
                 else if (lesson.IsSubClassLesson && !lesson.IsSubWeekLesson)
                 {
-                    conditionString.Append($"(RowIndex == {lesson.RowIndex}" + (version.UseSubWeek ? $" || RowIndex == {rowIndexSecond})" : ""));
+                    conditionString.Append($"RowIndex == {lesson.RowIndex}" + (version.UseSubWeek ? $" || RowIndex == {rowIndexSecond}" : ""));
                     conditionString.Append($" AND ((ClassroomId == {lesson.ClassroomId ?? -1} || TeacherId == {lesson.TeacherId}))");
                 }
                 else
                 {
-                    conditionString.Append($"(RowIndex == {lesson.RowIndex} || RowIndex == {rowIndexSecond})");
+                    conditionString.Append($"RowIndex == {lesson.RowIndex}");
                     conditionString.Append($" AND ((ClassroomId == {lesson.ClassroomId ?? -1} || TeacherId == {lesson.TeacherId}))");
-                    conditionString.Append($" AND ((FlowId == null AND  {lesson.FlowId == null}) || FlowId != {lesson.FlowId ?? -1})");
                 }
 
                 var mistakeLessonList = intersectLessons
                     .AsQueryable()
                     .Where(conditionString.ToString())
-                    .Where(l =>l.Id != lesson.Id)
-                    .Where(l =>l.StudyClassId != studyClassId);
+                    .Where(l => l.Id != lesson.Id)
+                    .Where(l => l.StudyClassId != studyClassId);
 
                 var mistakeTeacherLessonList = mistakeLessonList
+                    .Where(l => l.Id != lesson.Id)
                     .Where(l => l.TeacherId == lesson.TeacherId);
 
                 var mistakeClassroomLessonList = mistakeLessonList
+                    .Where(l => l.Id != lesson.Id)
                     .Where(l => l.ClassroomId == lesson.ClassroomId && l.ClassroomId != null && lesson.ClassroomId != null);
 
                 foreach (var mistake in mistakeTeacherLessonList)
                 {
-                    var message = $"{GetDayName(mistake.RowIndex.Value, version)} | {GetLessonNumber(mistake.RowIndex.Value, version)} | Накладка по преподавателю: {GetTeacherFIO(mistake.Teacher)} | {mistake.StudyClass.Name}";
-
-                    result.Add(message);
+                    mistakeListResult.Add(new MistakeListModel
+                    {
+                        Day = GetDayName(mistake.RowIndex.Value, version),
+                        Para = GetLessonNumber(mistake.RowIndex.Value, version),
+                        MistakeType = "Накладка по преподавателю: ",
+                        MistakeObject = GetTeacherFIO(mistake.Teacher),
+                        StudyClass = mistake.StudyClass.Name
+                    });
                 }
 
                 foreach (var mistake in mistakeClassroomLessonList)
                 {
                     var message = $"{GetDayName(mistake.RowIndex.Value, version)} | {GetLessonNumber(mistake.RowIndex.Value, version)} | Накладка по аудитории: {mistake.Classroom.Name} | {mistake.StudyClass.Name}";
 
-                    result.Add(message);
+                    mistakeListResult.Add(new MistakeListModel
+                    {
+                        Day = GetDayName(mistake.RowIndex.Value, version),
+                        Para = GetLessonNumber(mistake.RowIndex.Value, version),
+                        MistakeType = "Накладка по аудитории:",
+                        MistakeObject = mistake.Classroom.Name,
+                        StudyClass = mistake.StudyClass.Name
+                    });
                 }
             });
 
-            return result.Distinct().ToList();
+            return mistakeListResult
+                .OrderBy(m => dayNames.IndexOf(m.Day))
+                    .ThenBy(m => m.Para)
+                .Select(m => $"{m.Day} | {m.Para} | {m.MistakeType} {m.MistakeObject} | {m.StudyClass}")
+                .Distinct()
+                .ToList();
         }
 
         ///<inheritdoc/>
@@ -141,9 +161,7 @@ namespace BL.Services
                 .Where(l => l.RowIndex != null)
                 .ToListAsync();
 
-            //TODO
-            //Parallel.ForEach пропускает некоторые итерации из-за этого пропускаются накладки. 
-            //Необходимо решить проблему либо изменить код не теряя производительность.
+
             Parallel.ForEach(lessons, lesson =>
             {
                 var rowIndexSecond = lesson.RowIndex >= 0 && lesson.RowIndex % 2 != 0 ? lesson.RowIndex - 1 : lesson.RowIndex + 1;
@@ -153,20 +171,24 @@ namespace BL.Services
                 if (!lesson.IsSubClassLesson && !lesson.IsSubWeekLesson)
                 {
                     conditionString.Append($"(RowIndex == {lesson.RowIndex}" + (version.UseSubWeek ? $" || RowIndex == {rowIndexSecond}" : "") + ")");
+                    conditionString.Append($" AND ((ClassroomId == {lesson.ClassroomId ?? -1} || TeacherId == {lesson.TeacherId}))");
                     conditionString.Append($" AND ((FlowId == null AND  {lesson.FlowId == null}) || FlowId != {lesson.FlowId ?? -1})");
                 }
                 else if (!lesson.IsSubClassLesson && lesson.IsSubWeekLesson)
                 {
                     conditionString.Append($"(RowIndex == {lesson.RowIndex} || (IsSubWeekLesson == {false} && RowIndex == {rowIndexSecond}))");
+                    conditionString.Append($" AND ((ClassroomId == {lesson.ClassroomId ?? -1} || TeacherId == {lesson.TeacherId}))");
                     conditionString.Append($" AND FlowId != {lesson.FlowId ?? -1}");
                 }
                 else if (lesson.IsSubClassLesson && !lesson.IsSubWeekLesson)
                 {
                     conditionString.Append($"RowIndex == {lesson.RowIndex}" + (version.UseSubWeek ? $" || RowIndex == {rowIndexSecond}" : ""));
+                    conditionString.Append($" AND ((ClassroomId == {lesson.ClassroomId ?? -1} || TeacherId == {lesson.TeacherId}))");
                 }
                 else
                 {
                     conditionString.Append($"RowIndex == {lesson.RowIndex}");
+                    conditionString.Append($" AND ((ClassroomId == {lesson.ClassroomId ?? -1} || TeacherId == {lesson.TeacherId}))");
                 }
 
                 var mistakeStudyClassNameList = lessons
@@ -238,15 +260,13 @@ namespace BL.Services
         }
         private string GetDayName(int rowIndex, Version version)
         {
-            string[] days = new string[] { "Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье" };
-
             string result;
 
             double lessonCountByDay = version.UseSubWeek ? version.MaxLesson * 2 : version.MaxLesson;
 
             int dayNumber = (int)Math.Floor(rowIndex / lessonCountByDay);
 
-            result = days[dayNumber];
+            result = dayNames[dayNumber];
 
             return result;
         }

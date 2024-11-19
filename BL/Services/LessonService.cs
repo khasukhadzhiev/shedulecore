@@ -365,6 +365,8 @@ namespace BL.Services
 
                 foreach (var flow in flows)
                 {
+                    flow.LessonTypeId = lessonDto.LessonType.Id;
+
                     flow.TeacherId = lessonDto.Teacher.Id;
 
                     flow.SubjectId = lessonDto.Subject.Id;
@@ -376,6 +378,8 @@ namespace BL.Services
             }
             else
             {
+                lesson.LessonTypeId = lessonDto.LessonType.Id;
+
                 lesson.TeacherId = lessonDto.Teacher.Id;
 
                 lesson.SubjectId = lessonDto.Subject.Id;

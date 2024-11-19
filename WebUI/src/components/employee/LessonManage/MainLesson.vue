@@ -86,7 +86,7 @@
         <b-form-input v-model="filter" @input="filter = filter.toUpperCase()" placeholder="ФИО преподавателя / Дисциплина"></b-form-input>
       </div>
     </div>    
-    <h6 class="text-left">Список занятий {{studyClass.name}} группы</h6>
+    <h6 class="text-left">Список занятий группы: {{studyClass.name}} </h6>
     <b-table
       hover
       outlined
@@ -102,7 +102,21 @@
         </div>
       </template>
       <template v-slot:cell(index)="row">{{row.index + 1}}</template>
-      <template v-slot:cell(lessonType)="row">{{row.item.lessonType.name}}</template>
+      <template v-slot:cell(lessonType)="row">
+        <multiselect
+          v-model="row.item.lessonType"
+          :options="lessonTypeList"
+          :allowEmpty="false"
+          track-by="id"
+          label="name"
+          :show-labels="false"
+          placeholder="Выбрать вид занятия"
+          :multiple="false"
+          @select="editLessonData(row.item)"
+        >
+          <template slot="noResult">Вид занятий не найден!</template>
+        </multiselect>
+      </template>
       <template v-slot:cell(subject)="row">
         <multiselect
           v-model="row.item.subject"
@@ -335,16 +349,12 @@ export default {
       }
     },
     editLessonData(lesson){
-      this.isLoading = true;
       EditLessonData(lesson, this.version.id)
         .then(() => {
           this.$ntf.Success("Занятие сохранено!");
         })
         .catch(error => {
           this.$ntf.Error("Ошибка при сохранении занятия.", error);
-        })
-        .finally(() => {
-          this.isLoading = false;
         });      
     },
     discriptLessonDayAndNumber(lessonDay, lessonNumber){

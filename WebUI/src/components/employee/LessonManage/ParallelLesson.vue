@@ -81,7 +81,21 @@
         </div>
       </template>
       <template v-slot:cell(index)="row">{{row.index + 1}}</template>
-      <template v-slot:cell(lessonType)="row">{{row.item.lessonType.name}}</template>
+      <template v-slot:cell(lessonType)="row">
+        <multiselect
+          v-model="row.item.lessonType"
+          :options="lessonTypeList"
+          :allowEmpty="false"
+          track-by="id"
+          label="name"
+          :show-labels="false"
+          placeholder="Выбрать вид занятия"
+          :multiple="false"
+          @select="editLessonData(row.item)"
+        >
+          <template slot="noResult">Вид занятий не найден!</template>
+        </multiselect>
+      </template>
 
       <template v-slot:cell(subject)="row">
         <multiselect
@@ -269,16 +283,12 @@ export default {
         });
     },
     editLessonData(lesson) {
-      this.isLoading = true;
       EditLessonData(lesson, this.version.id)
         .then(() => {
           this.$ntf.Success("Занятие сохранено!");
         })
         .catch(error => {
           this.$ntf.Error("Ошибка при сохранении занятия.", error);
-        })
-        .finally(() => {
-          this.isLoading = false;
         });
     },
     discriptLessonDayAndNumber(lessonDay, lessonNumber){

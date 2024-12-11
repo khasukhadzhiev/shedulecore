@@ -137,7 +137,7 @@ namespace DTL.Mapping
             {
                 Id = flowDto.Id,
                 Name = flowDto.Name.Trim().ToUpper(),
-                TeachersIds = flowDto.TeachersIds,
+                TeacherList = flowDto.TeacherList,
             };
 
             return flow;

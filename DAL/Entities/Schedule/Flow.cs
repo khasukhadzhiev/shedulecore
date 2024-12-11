@@ -13,8 +13,8 @@ namespace DAL.Entities.Schedule
         public string Name { get; set; }
 
         /// <summary>
-        /// Id преподавателей
+        /// Преподаватели потока
         /// </summary>
-        public int[]? TeachersIds { get; set; }
+        public ICollection<Teacher> TeacherList { get; set; }
     }
 }

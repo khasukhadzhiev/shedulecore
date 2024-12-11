@@ -30,14 +30,14 @@
         <div class="col">
           <label>Преподаватель</label>
           <multiselect
-            v-model="flowLesson.teacher"
+            v-model="flowLesson.flow.teacherList"
             :options="teacherList"
             :allowEmpty="false"
             track-by="id"
             label="fullName"
             :show-labels="false"
             placeholder="Выбрать преподавателя"
-            :multiple="false"
+            :multiple="true"
           >
             <template slot="noResult">Преподаватель не найден!</template>
           </multiselect>    
@@ -146,14 +146,14 @@
       </template>
       <template v-slot:cell(teacher)="row">
         <multiselect
-          v-model="row.item.teacher"
+          v-model="row.item.flow.teacherList"
           :options="teacherList"
           :allowEmpty="false"
           track-by="id"
           label="fullName"
           :show-labels="false"
           placeholder="Выбрать преподавателя"
-          :multiple="false"
+          :multiple="true"
           @select="editLessonData(row.item)"
         >
           <template slot="noResult">Преподаватель не найден!</template>
@@ -209,6 +209,9 @@ export default {
         teacher: "",
         isParallel: false,
         flowStudyClassIds: [],
+        flow:{
+          teacherList:[]
+        },
         isSubWeekLesson: false
       },
       filter:"",      

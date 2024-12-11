@@ -1,4 +1,6 @@
-﻿namespace DTL.Dto.ScheduleDto
+﻿using DAL.Entities.Schedule;
+
+namespace DTL.Dto.ScheduleDto
 {
     /// <summary>
     /// Поток
@@ -6,8 +8,8 @@
     public class FlowDto : BaseDto
     {
         /// <summary>
-        /// Id преподавателей
+        /// Преподаватели потока
         /// </summary>
-        public int[]? TeachersIds { get; set; }
+        public ICollection<Teacher> TeacherList { get; set; }
     }
 }

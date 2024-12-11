@@ -53,6 +53,8 @@ namespace BL.Services
                 .Include(l => l.Subject)
                 .Include(l => l.Teacher)
                 .Include(l => l.Version)
+                .Include(l => l.Flow)
+                    .ThenInclude(f=>f.TeacherList)
                 .Where(f => f.StudyClassId == studyClassId
                             && f.FlowId != null
                             && f.VersionId == versionId)
@@ -123,9 +125,9 @@ namespace BL.Services
                     {
                     lessonDto.FlowStudyClassIds = lessonDto.FlowStudyClassIds.Distinct().ToArray();
 
-                        if (lessonDto.Teacher != null)
+                        if (lessonDto.Flow.TeacherList.Count > 0)
                         {
-                            lessonDto.TeacherId = lessonDto.Teacher.Id;
+                            lessonDto.TeacherId = lessonDto.Flow.TeacherList.First().Id;
 
                             lessonDto.Teacher = null;
                         }
@@ -145,7 +147,10 @@ namespace BL.Services
 
                         var flowName = string.Join(", ", flowStudyClassNames);
 
-                        var flow = new Flow { Name = flowName };
+                        var flow = new Flow { 
+                            Name = flowName,
+                            TeacherList = lessonDto.Flow.TeacherList,
+                        };
 
                         await _context.Flows.AddAsync(flow);
                         await _context.SaveChangesAsync();
@@ -286,6 +291,7 @@ namespace BL.Services
                 .Include(l => l.Subject)
                 .Include(l => l.Teacher)
                 .Include(l => l.Flow)
+                    .ThenInclude(f=> f.TeacherList)
                 .Include(l => l.Version)
                 .Where(conditionString.ToString())
                 .Where(l => l.VersionId == versionId)
@@ -374,6 +380,8 @@ namespace BL.Services
                     flow.IsSubClassLesson = lessonDto.IsSubClassLesson;
 
                     flow.IsSubWeekLesson = lessonDto.IsSubWeekLesson;
+
+                    flow.Flow.TeacherList = lessonDto.Flow.TeacherList;
                 }
             }
             else
@@ -420,6 +428,9 @@ namespace BL.Services
             var flowLessonList = await _context.Lessons
                 .AsNoTracking()
                 .Include(l => l.LessonType)
+                .Include(l=> l.Flow)
+                    .ThenInclude(f=>f.TeacherList)
+                .Include(l => l.Subject)
                 .Include(l => l.StudyClass)
                 .Include(l => l.Subject)
                 .Include(l => l.Teacher)

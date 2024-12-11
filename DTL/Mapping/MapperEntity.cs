@@ -131,6 +131,18 @@ namespace DTL.Mapping
             return teacher;
         }
 
+        public static Flow ToFlow(this FlowDto flowDto)
+        {
+            var flow = new Flow
+            {
+                Id = flowDto.Id,
+                Name = flowDto.Name.Trim().ToUpper(),
+                TeachersIds = flowDto.TeachersIds,
+            };
+
+            return flow;
+        }
+
         public static Lesson ToLesson(this LessonDto lessonDto)
         {
             var lesson = new Lesson
@@ -151,7 +163,7 @@ namespace DTL.Mapping
 
                 Version = lessonDto?.Version?.ToVersion(),
                 Classroom = lessonDto?.Classroom?.ToClassroom(),
-                Flow = lessonDto?.Flow?.ToEntity<Flow>(),
+                Flow = lessonDto?.Flow?.ToFlow(),
                 LessonType = lessonDto?.LessonType?.ToEntity<LessonType>(),
                 StudyClass = lessonDto?.StudyClass?.ToEntity<StudyClass>(),
                 Subject = lessonDto?.Subject?.ToEntity<Subject>(),

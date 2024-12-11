@@ -5,5 +5,9 @@
     /// </summary>
     public class FlowDto : BaseDto
     {
+        /// <summary>
+        /// Id преподавателей
+        /// </summary>
+        public int[]? TeachersIds { get; set; }
     }
 }

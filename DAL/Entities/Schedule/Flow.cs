@@ -11,5 +11,10 @@ namespace DAL.Entities.Schedule
         /// Наименование потока
         /// </summary>
         public string Name { get; set; }
+
+        /// <summary>
+        /// Id преподавателей
+        /// </summary>
+        public int[]? TeachersIds { get; set; }
     }
 }

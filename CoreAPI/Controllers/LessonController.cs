@@ -32,7 +32,7 @@ namespace CoreAPI.Controllers
         [Route("GetFlowLessonList")]
         public async Task<IActionResult> GetFlowList(int studyClassId, int versionId)
         {
-            var lessonFlowDtoList = await _lessonService.GetFlowListAsync(studyClassId, versionId);
+            var lessonFlowDtoList = await _lessonService.GetFlowLessonListAsync(studyClassId, versionId);
 
             return Ok(lessonFlowDtoList);
         }
@@ -41,7 +41,7 @@ namespace CoreAPI.Controllers
         [Route("GetParallelLessonList")]
         public async Task<IActionResult> GetParallelList(int studyClassId, int versionId)
         {
-            var lessonFlowDtoList = await _lessonService.GetParallelListAsync(studyClassId, versionId);
+            var lessonFlowDtoList = await _lessonService.GetParallelLessonListAsync(studyClassId, versionId);
 
             return Ok(lessonFlowDtoList);
         }

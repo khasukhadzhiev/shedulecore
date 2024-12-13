@@ -24,7 +24,7 @@ namespace BL.ServiceInterface
         /// Получить список поточных занятий
         /// </summary>
         /// <returns>Список поточных занятий</returns>
-        Task<List<LessonDto>> GetFlowListAsync(int studyClassId, int versionId);
+        Task<List<LessonDto>> GetFlowLessonListAsync(int studyClassId, int versionId);
 
         /// <summary>
         /// Добавить поточное занятие
@@ -37,7 +37,7 @@ namespace BL.ServiceInterface
         /// Получить список паралелей
         /// </summary>
         /// <returns>Список паралелей</returns>
-        Task<List<LessonDto>> GetParallelListAsync(int studyClassId, int versionId);
+        Task<List<LessonDto>> GetParallelLessonListAsync(int studyClassId, int versionId);
 
         /// <summary>
         /// Добавить паралель

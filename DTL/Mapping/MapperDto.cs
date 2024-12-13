@@ -184,8 +184,8 @@ namespace DTL.Mapping
             var flowDto = new FlowDto
             {
                 Id = flow.Id,
-                Name = flow.Name,
-                TeacherList = flow.TeacherList,
+                Name = flow?.Name,
+                TeacherList = flow?.TeacherList?.Select(t => t.ToTeacherDto()).ToList(),
             };
 
             return flowDto;
@@ -222,6 +222,11 @@ namespace DTL.Mapping
                 Teacher = lesson?.Teacher?.ToTeacherDto(),
                 Name = null,
             };
+
+            if(lessonDto.FlowId != null)
+            {
+                lessonDto.Teacher.FullName = string.Join(",", lessonDto.Flow.TeacherList.Select(t => t.FullName));
+            }
 
             return lessonDto;
         }

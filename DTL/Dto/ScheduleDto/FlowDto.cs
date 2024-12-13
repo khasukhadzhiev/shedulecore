@@ -10,6 +10,6 @@ namespace DTL.Dto.ScheduleDto
         /// <summary>
         /// Преподаватели потока
         /// </summary>
-        public ICollection<Teacher> TeacherList { get; set; }
+        public ICollection<TeacherDto> TeacherList { get; set; }
     }
 }

@@ -363,6 +363,9 @@ namespace DAL.Migrations
                     b.Property<string>("Name")
                         .HasColumnType("text");
 
+                    b.Property<string>("TeacherList")
+                        .HasColumnType("text");
+
                     b.HasKey("Id");
 
                     b.ToTable("Flows");
@@ -633,9 +636,6 @@ namespace DAL.Migrations
                     b.Property<string>("FirstName")
                         .HasColumnType("text");
 
-                    b.Property<int?>("FlowId")
-                        .HasColumnType("integer");
-
                     b.Property<string>("LessonNumbers")
                         .HasColumnType("text");
 
@@ -649,8 +649,6 @@ namespace DAL.Migrations
                         .HasColumnType("text");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("FlowId");
 
                     b.ToTable("Teachers");
                 });
@@ -908,23 +906,11 @@ namespace DAL.Migrations
                     b.Navigation("Version");
                 });
 
-            modelBuilder.Entity("DAL.Entities.Schedule.Teacher", b =>
-                {
-                    b.HasOne("DAL.Entities.Schedule.Flow", null)
-                        .WithMany("TeacherList")
-                        .HasForeignKey("FlowId");
-                });
-
             modelBuilder.Entity("DAL.Entities.Employee", b =>
                 {
                     b.Navigation("Account");
 
                     b.Navigation("EmployeeRoles");
-                });
-
-            modelBuilder.Entity("DAL.Entities.Schedule.Flow", b =>
-                {
-                    b.Navigation("TeacherList");
                 });
 #pragma warning restore 612, 618
         }

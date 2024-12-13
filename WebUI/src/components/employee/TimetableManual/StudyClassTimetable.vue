@@ -148,8 +148,7 @@
                   {{ lesson.lessonType.name.substr(0, 3) }}.
                   {{ lesson.subject.name }}
                   <br />
-                  {{ lesson.teacher.firstName }} {{ lesson.teacher.name }}
-                  {{ lesson.teacher.middleName }}
+                  {{ lesson.teacher.fullName }}
                   <template>
                     <br />
                     <b-form-select
@@ -293,9 +292,7 @@
           }}</span>
           {{ lesson.lessonType.name.substr(0, 3) }}. {{ lesson.subject.name }}
           <br />
-          {{ lesson.teacher.firstName }} {{ lesson.teacher.name }}
-          <br />
-          {{ lesson.teacher.middleName }}
+          {{ lesson.teacher.fullName }}
         </div>
       </div>
       <div class="mistake-list">

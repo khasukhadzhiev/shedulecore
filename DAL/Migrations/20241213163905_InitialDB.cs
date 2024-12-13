@@ -87,7 +87,8 @@ namespace DAL.Migrations
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    Name = table.Column<string>(type: "text", nullable: true)
+                    Name = table.Column<string>(type: "text", nullable: true),
+                    TeacherList = table.Column<string>(type: "text", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -161,6 +162,23 @@ namespace DAL.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Teachers",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    FirstName = table.Column<string>(type: "text", nullable: true),
+                    Name = table.Column<string>(type: "text", nullable: true),
+                    MiddleName = table.Column<string>(type: "text", nullable: true),
+                    WeekDays = table.Column<string>(type: "text", nullable: true),
+                    LessonNumbers = table.Column<string>(type: "text", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Teachers", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Versions",
                 columns: table => new
                 {
@@ -229,29 +247,6 @@ namespace DAL.Migrations
                         principalTable: "Employees",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Teachers",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    FirstName = table.Column<string>(type: "text", nullable: true),
-                    Name = table.Column<string>(type: "text", nullable: true),
-                    MiddleName = table.Column<string>(type: "text", nullable: true),
-                    WeekDays = table.Column<string>(type: "text", nullable: true),
-                    LessonNumbers = table.Column<string>(type: "text", nullable: true),
-                    FlowId = table.Column<int>(type: "integer", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Teachers", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Teachers_Flows_FlowId",
-                        column: x => x.FlowId,
-                        principalTable: "Flows",
-                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -670,11 +665,6 @@ namespace DAL.Migrations
                 name: "IX_StudyClassReporting_VersionId",
                 table: "StudyClassReporting",
                 column: "VersionId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Teachers_FlowId",
-                table: "Teachers",
-                column: "FlowId");
         }
 
         /// <inheritdoc />
@@ -700,6 +690,9 @@ namespace DAL.Migrations
 
             migrationBuilder.DropTable(
                 name: "Employees");
+
+            migrationBuilder.DropTable(
+                name: "Flows");
 
             migrationBuilder.DropTable(
                 name: "LessonTypes");
@@ -736,9 +729,6 @@ namespace DAL.Migrations
 
             migrationBuilder.DropTable(
                 name: "Subdivisions");
-
-            migrationBuilder.DropTable(
-                name: "Flows");
         }
     }
 }

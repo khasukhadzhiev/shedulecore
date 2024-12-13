@@ -165,12 +165,7 @@
                   {{ lesson.subject.name }}
                   <template v-if="timetable.isStudyClass">
                     <br />
-                    {{ lesson.teacher.firstName }} {{ lesson.teacher.name }}
-                    {{ lesson.teacher.middleName }}
-                    <template v-if="lesson.flow">
-                      <br />
-                      {{ lesson.flow.name }}
-                    </template>
+                    {{ lesson.teacher.fullName }}
                   </template>
                   <template v-else>
                     <br />

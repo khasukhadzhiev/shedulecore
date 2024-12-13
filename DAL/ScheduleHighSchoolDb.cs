@@ -38,6 +38,8 @@ namespace DAL
 
             builder.ApplyConfiguration(new VersionConfiguration());
 
+            builder.ApplyConfiguration(new FlowConfiguration());
+
             InitializeDB.Initialize(builder);
 
             base.OnModelCreating(builder);

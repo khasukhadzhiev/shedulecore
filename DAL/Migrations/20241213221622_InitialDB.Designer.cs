@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DAL.Migrations
 {
     [DbContext(typeof(ScheduleHighSchoolDb))]
-    [Migration("20241213163905_InitialDB")]
+    [Migration("20241213221622_InitialDB")]
     partial class InitialDB
     {
         /// <inheritdoc />
@@ -364,6 +364,9 @@ namespace DAL.Migrations
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Name")
+                        .HasColumnType("text");
+
+                    b.Property<string>("StudyClassList")
                         .HasColumnType("text");
 
                     b.Property<string>("TeacherList")

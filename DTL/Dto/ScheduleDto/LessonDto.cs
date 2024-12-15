@@ -61,11 +61,6 @@
         public int? ColIndex { get; set; }
 
         /// <summary>
-        /// Id групп которые находятся в потоке
-        /// </summary>
-        public int[] FlowStudyClassIds { get; set; }
-
-        /// <summary>
         /// Наименование групп которые находятся в потоке
         /// </summary>
         public string FlowStudyClassNames { get; set; }

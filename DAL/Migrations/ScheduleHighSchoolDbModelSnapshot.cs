@@ -363,6 +363,9 @@ namespace DAL.Migrations
                     b.Property<string>("Name")
                         .HasColumnType("text");
 
+                    b.Property<string>("StudyClassList")
+                        .HasColumnType("text");
+
                     b.Property<string>("TeacherList")
                         .HasColumnType("text");
 

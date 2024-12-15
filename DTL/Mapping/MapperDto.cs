@@ -186,6 +186,7 @@ namespace DTL.Mapping
                 Id = flow.Id,
                 Name = flow?.Name,
                 TeacherList = flow?.TeacherList?.Select(t => t.ToTeacherDto()).ToList(),
+                StudyClassList = flow?.StudyClassList?.Select(s=>s.ToStudyClassDto()).ToList(), 
             };
 
             return flowDto;

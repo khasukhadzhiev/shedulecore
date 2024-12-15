@@ -69,6 +69,7 @@ namespace BL.Services
                     .FirstOrDefaultAsync(f => f.Id == flowLesson.FlowId.Value);
 
                 flowLesson.Flow.TeacherList = flow.TeacherList.Select(t => t.ToTeacherDto()).ToList();
+                flowLesson.Flow.StudyClassList = flow.StudyClassList.Select(t => t.ToStudyClassDto()).ToList();
                 flowLesson.Flow.Name = flow.Name;
                 flowLesson.FlowStudyClassNames = (await _context.Flows.FirstOrDefaultAsync(f => f.Id == flowLesson.FlowId.Value)).Name;
             }
@@ -125,12 +126,12 @@ namespace BL.Services
         ///<inheritdoc/>
         public async Task AddFlowLessonAsync(LessonDto lessonDto, int versionId)
         {
-            if (lessonDto.FlowStudyClassIds.Length > 0)
+            lessonDto.Flow.StudyClassList = lessonDto.Flow.StudyClassList.Distinct().ToList();
+
+            if (lessonDto.Flow.StudyClassList.Count > 0)
             {
                     try
                     {
-                        lessonDto.FlowStudyClassIds = lessonDto.FlowStudyClassIds.Distinct().ToArray();
-
                         if (lessonDto.Flow.TeacherList.Any())
                         {
                             lessonDto.TeacherId = lessonDto.Flow.TeacherList.First().Id;
@@ -145,15 +146,13 @@ namespace BL.Services
                             lessonDto.Subject = null;
                         }
 
-                        var flowName = string.Join(", ",
-                            (await _context.StudyClasses.Where(s => lessonDto.FlowStudyClassIds.Contains(s.Id))
-                                .Select(s => s.Name).OrderBy(s => s).ToListAsync())
-                            );
+                        var flowName = string.Join(", ", lessonDto.Flow.StudyClassList.Select(s=>s.Name));
 
 
                         var flow = new Flow { 
                             Name = flowName,
                             TeacherList = lessonDto.Flow.TeacherList.Select(t=>t.ToTeacher()).ToList(),
+                            StudyClassList = lessonDto.Flow.StudyClassList.Select(t => t.ToStudyClass()).ToList(),
                         };
 
                         await _context.Flows.AddAsync(flow);
@@ -163,9 +162,9 @@ namespace BL.Services
                         lessonDto.VersionId = versionId;
 
                         //Добавление поточного занятия
-                        foreach (var studyClassId in lessonDto.FlowStudyClassIds)
+                        foreach (var studyClass in lessonDto.Flow.StudyClassList)
                         {
-                            lessonDto.StudyClassId = studyClassId;
+                            lessonDto.StudyClassId = studyClass.Id;
                             await _context.Lessons.AddAsync(lessonDto.ToLesson());
                         }
                         await _context.SaveChangesAsync();
@@ -376,23 +375,78 @@ namespace BL.Services
         {
             var lesson = await _context.Lessons.Include(l =>l.Subject).Include(l=> l.Teacher).FirstOrDefaultAsync(l => l.Id == lessonDto.Id);
 
+            lessonDto.Flow.StudyClassList = lessonDto.Flow.StudyClassList.DistinctBy(s=>s.Id).ToList();
+
             if (lesson.FlowId != null)
             {
-                var flows = _context.Lessons.Include(l => l.Subject).Include(l => l.Teacher).Where(l => l.FlowId == lesson.FlowId);
+                var flowName = string.Join(", ", lessonDto.Flow.StudyClassList.Select(s => s.Name));
 
-                foreach (var flow in flows)
+                var flowLessonList = await _context.Lessons
+                    .Include(l=>l.StudyClass)
+                    .Include(l=>l.Flow).Where(l => l.FlowId == lesson.FlowId).ToListAsync();
+
+                var studyClassToRemove = flowLessonList.Select(l=>l.StudyClass.Id).Except(lessonDto.Flow.StudyClassList.Select(l => l.Id));
+
+                var studyClassOld = flowLessonList.Select(l => l.StudyClass.Id).Intersect(lessonDto.Flow.StudyClassList.Select(l => l.Id));
+
+                var studyClassNewList = lessonDto.Flow.StudyClassList.Select(l => l.Id).Except(flowLessonList.Select(l => l.StudyClass.Id));
+
+                foreach (var studyClassNew in studyClassNewList)
                 {
-                    flow.LessonTypeId = lessonDto.LessonType.Id;
+                    var newLesson = new Lesson
+                    {
+                        LessonTypeId = lessonDto.LessonType.Id,
 
-                    flow.TeacherId = lessonDto.Teacher.Id;
+                        TeacherId = lesson.TeacherId,
 
-                    flow.SubjectId = lessonDto.Subject.Id;
+                        FlowId = lessonDto.FlowId,
 
-                    flow.IsSubClassLesson = lessonDto.IsSubClassLesson;
+                        SubjectId = lessonDto.Subject.Id,
 
-                    flow.IsSubWeekLesson = lessonDto.IsSubWeekLesson;
+                        StudyClassId = studyClassNew,
 
-                    flow.Flow.TeacherList = lessonDto.Flow.TeacherList.Select(t=>t.ToTeacher()).ToList();
+                        VersionId = versionId,
+
+                        IsSubClassLesson = lessonDto.IsSubClassLesson,
+
+                        IsSubWeekLesson = lessonDto.IsSubWeekLesson,
+
+                        RowIndex = lesson.RowIndex,
+
+                        ColIndex = lesson.ColIndex,
+                    };
+
+                    await _context.Lessons.AddAsync(newLesson);
+                }
+
+                foreach (var flowLesson in flowLessonList)
+                {
+                    var flow = await _context.Flows.FirstOrDefaultAsync(f => f.Id == flowLesson.FlowId.Value);
+                    
+                    flow.Name = flowName;
+
+                    if (studyClassToRemove.Contains(flowLesson.StudyClassId))
+                    {
+                        _context.Lessons.Remove(flowLesson);
+
+                        continue;
+                    }
+
+                    flowLesson.Flow.TeacherList = lessonDto.Flow.TeacherList.Select(t => t.ToTeacher()).ToList();
+
+                    flowLesson.Flow.StudyClassList = lessonDto.Flow.StudyClassList.Select(t => t.ToStudyClass()).ToList();
+
+                    flowLesson.LessonTypeId = lessonDto.LessonType.Id;
+
+                    flowLesson.TeacherId = flow.TeacherList.ToList().First().Id;
+
+                    flowLesson.Flow.Name = flowName;
+
+                    flowLesson.SubjectId = lessonDto.Subject.Id;
+
+                    flowLesson.IsSubClassLesson = lessonDto.IsSubClassLesson;
+
+                    flowLesson.IsSubWeekLesson = lessonDto.IsSubWeekLesson;
                 }
             }
             else

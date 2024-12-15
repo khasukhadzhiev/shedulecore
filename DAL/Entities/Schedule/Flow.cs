@@ -16,5 +16,10 @@ namespace DAL.Entities.Schedule
         /// Преподаватели потока
         /// </summary>
         public ICollection<Teacher> TeacherList { get; set; }
+
+        /// <summary>
+        /// Группы потока
+        /// </summary>
+        public ICollection<StudyClass> StudyClassList { get; set; }
     }
 }

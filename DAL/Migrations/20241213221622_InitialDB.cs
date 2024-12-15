@@ -88,7 +88,8 @@ namespace DAL.Migrations
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     Name = table.Column<string>(type: "text", nullable: true),
-                    TeacherList = table.Column<string>(type: "text", nullable: true)
+                    TeacherList = table.Column<string>(type: "text", nullable: true),
+                    StudyClassList = table.Column<string>(type: "text", nullable: true)
                 },
                 constraints: table =>
                 {

@@ -22,6 +22,18 @@ namespace DAL.Configurations
                     c => c.ToList()
                 )
             );
+
+            builder
+            .Property(f => f.StudyClassList)
+            .HasConversion(
+                v => JsonSerializer.Serialize(v, (JsonSerializerOptions)null),
+                v => JsonSerializer.Deserialize<ICollection<StudyClass>>(v, (JsonSerializerOptions)null),
+                new ValueComparer<ICollection<StudyClass>>(
+                    (c1, c2) => c1.SequenceEqual(c2),
+                    c => c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
+                    c => c.ToList()
+                )
+            );
         }
     }
 }

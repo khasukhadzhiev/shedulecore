@@ -11,5 +11,10 @@ namespace DTL.Dto.ScheduleDto
         /// Преподаватели потока
         /// </summary>
         public ICollection<TeacherDto> TeacherList { get; set; }
+
+        /// <summary>
+        /// Группы потока
+        /// </summary>
+        public ICollection<StudyClassDto> StudyClassList { get; set; }
     }
 }

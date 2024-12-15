@@ -301,7 +301,6 @@ namespace BL.Services
                                 IsParallel = row.IsParallel,
                                 IsSubClassLesson = row.IsSubclassLesson,
                                 IsSubWeekLesson = row.IsSubweekLesson,
-                                FlowStudyClassIds = flowStudyClassIds.ToArray(),
                             }, versionId);
                         }
                         else if (row.IsParallel)

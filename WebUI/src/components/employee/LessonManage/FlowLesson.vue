@@ -45,7 +45,7 @@
         <div class="col-2">
           <label>Группы в потоке</label>
           <multiselect
-            v-model="selectedstudyClass"
+            v-model="flowLesson.flow.studyClassList"
             :options="studyClassList"
             track-by="id"
             label="name"
@@ -87,7 +87,7 @@
           variant="outline-primary"
           @click="addFlowLesson"
           v-if="showAddBlock"
-          :disabled="selectedstudyClass.length < 1"
+          :disabled="flowLesson.flow.studyClassList.length < 1"
         >Добавить поточное занятие</b-button>
       </div>
     </div>
@@ -123,7 +123,7 @@
           :show-labels="false"
           placeholder="Выбрать вид занятия"
           :multiple="false"
-          @select="editLessonData(row.item)"
+          @input="editLessonData(row.item)"
         >
           <template slot="noResult">Вид занятий не найден!</template>
         </multiselect>
@@ -139,7 +139,7 @@
           :show-labels="false"
           placeholder="Выбрать дисциплину"
           :multiple="false"
-          @select="editLessonData(row.item)"
+          @input="editLessonData(row.item)"
         >
           <template slot="noResult">Дисциплина не найдена!</template>
         </multiselect>
@@ -154,13 +154,28 @@
           :show-labels="false"
           placeholder="Выбрать преподавателя"
           :multiple="true"
-          @select="editLessonData(row.item)"
+          @input="editLessonData(row.item)"
         >
           <template slot="noResult">Преподаватель не найден!</template>
         </multiselect>
       </template>
 
-      <template v-slot:cell(flowStudyClassNames)="row">{{row.item.flowStudyClassNames}}</template>
+      <template v-slot:cell(studyClassList)="row">
+        <multiselect
+          v-model="row.item.flow.studyClassList"
+          :options="studyClassList"
+          :allowEmpty="false"
+          track-by="id"
+          label="name"
+          :show-labels="false"
+          placeholder="Выбрать группу"
+          :multiple="true"
+          @input="editLessonData(row.item)"
+        >
+          <template slot="noResult">Группа не найдена!</template>
+        </multiselect>
+      </template>
+
       <template
         v-slot:cell(isSubWeekLesson)="row" v-if="version.useSubWeek"
       ><span class="btn" @click="changeSubWeekType(row.item)">
@@ -208,14 +223,13 @@ export default {
         subject: "",
         teacher: "",
         isParallel: false,
-        flowStudyClassIds: [],
         flow:{
-          teacherList:[]
+          teacherList:[],
+          studyClassList:[]
         },
         isSubWeekLesson: false
       },
       filter:"",      
-      selectedstudyClass: [],
       flowLessonList: [],
       showAddBlock: false,
       fields: [
@@ -223,7 +237,7 @@ export default {
         { key: "lessonType", label: "Вид занятия", sortable: true  },
         { key: "subject", label: "Дисциплина", sortable: true  },
         { key: "teacher", label: "Преподаватель", sortable: true  },
-        { key: "flowStudyClassNames", label: "Группы в потоке", sortable: true  },
+        { key: "studyClassList", label: "Группы в потоке", sortable: true  },
         { key: "isSubWeekLesson", label: "Неделя" },
         { key: "removeFromTimetable", label: "Положение" },
         { key: "remove", label: "" }
@@ -297,7 +311,7 @@ export default {
         });
     },        
     addFlowLesson() {
-      let isEmty =this.flowLesson.flowStudyClassIds.length < 1;
+      let isEmty =this.flowLesson.flow.studyClassList.length < 1;
 
       if (isEmty === "") {
         this.$ntf.Warn(
@@ -307,10 +321,9 @@ export default {
       }
 
       this.isLoading = true;
-      this.flowLesson.flowStudyClassIds = this.selectedstudyClass.map(
-        f => f.id
-      );
-      this.flowLesson.flowStudyClassIds.push(this.studyClass.id);
+
+      this.flowLesson.flow.studyClassList = this.addCurrentStudyClassToFlow(this.flowLesson.flow.studyClassList);
+
       AddFlowLesson(this.flowLesson, this.version.id)
         .then(() => {
           this.$ntf.Success("Занятие сохранено!");
@@ -373,6 +386,7 @@ export default {
       this.editLessonData(lesson);
     },
     editLessonData(lesson){
+      lesson.flow.studyClassList = this.addCurrentStudyClassToFlow(lesson.flow.studyClassList);
       EditLessonData(lesson, this.version.id)
         .then(() => {
           this.$ntf.Success("Занятие сохранено!");
@@ -383,6 +397,13 @@ export default {
     },
     discriptLessonDayAndNumber(lessonDay, lessonNumber){
       return DiscriptLessonDayAndNumber(lessonDay, lessonNumber);
+    },
+    addCurrentStudyClassToFlow(studyClassList){
+      let currentCtudyClass = studyClassList.find((s) => s.id == this.studyClass.id);
+      if(!currentCtudyClass){
+        studyClassList.push(this.studyClass);
+      }
+      return studyClassList;
     }
   },
   created() {

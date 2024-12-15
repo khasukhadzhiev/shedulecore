@@ -6,6 +6,7 @@ using System.Runtime.InteropServices;
 using BL.ServiceInterface;
 using ClosedXML.Excel;
 using HtmlAgilityPack;
+using System.Text.RegularExpressions;
 
 namespace BL.Services
 {
@@ -162,7 +163,7 @@ namespace BL.Services
             {
                 var memoryStream = new MemoryStream();
 
-                string sheetName = saveFileModelDto.Name.Length > 25 ? saveFileModelDto.Name.Substring(0, 25) : saveFileModelDto.Name;
+                string sheetName = Regex.Replace(saveFileModelDto.Name.Length > 25 ? saveFileModelDto.Name.Substring(0, 25) : saveFileModelDto.Name, @"[^a-zA-Zа-яА-Я\-]", "");
 
                 // Парсинг HTML
                 var htmlDoc = new HtmlDocument();

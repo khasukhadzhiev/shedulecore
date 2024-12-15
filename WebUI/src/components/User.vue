@@ -477,7 +477,7 @@ export default {
       let outerHTML = element.outerHTML;
       let pdfSaveModelDto = {
         html: outerHTML,
-        name: "Расписание отчетностей " + this.queryList.join().Length > 150 ? this.queryList.join().Substring(0, 150).toUpperCase() : this.queryList.join().toUpperCase(),
+        name: "Расписание отчетностей " + this.queryList.join().Length > 50 ? this.queryList.join().Substring(0, 50).toUpperCase() : this.queryList.join().toUpperCase(),
       };
 
       this.isLoading = true;
@@ -503,7 +503,7 @@ export default {
 
       let xlsxSaveModelDto = {
         html: outerHTML,
-        name: "Расписание " + this.queryList.join().Length > 150 ? this.queryList.join().Substring(0, 150).toUpperCase() : this.queryList.join().toUpperCase(),
+        name: "Расписание " + this.queryList.join().Length > 50 ? this.queryList.join().Substring(0, 50).toUpperCase() : this.queryList.join().toUpperCase(),
       };
 
       this.isLoading = true;

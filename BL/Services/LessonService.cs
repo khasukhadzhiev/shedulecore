@@ -68,8 +68,13 @@ namespace BL.Services
                     .AsNoTracking()
                     .FirstOrDefaultAsync(f => f.Id == flowLesson.FlowId.Value);
 
-                flowLesson.Flow.TeacherList = flow.TeacherList.Select(t => t.ToTeacherDto()).ToList();
-                flowLesson.Flow.StudyClassList = flow.StudyClassList.Select(t => t.ToStudyClassDto()).ToList();
+
+                if(flow.TeacherList != null && flow.StudyClassList != null)
+                {
+                    flowLesson.Flow.TeacherList = flow.TeacherList.Select(t => t.ToTeacherDto()).ToList();
+                    flowLesson.Flow.StudyClassList = flow.StudyClassList.Select(t => t.ToStudyClassDto()).ToList();
+                }
+
                 flowLesson.Flow.Name = flow.Name;
                 flowLesson.FlowStudyClassNames = (await _context.Flows.FirstOrDefaultAsync(f => f.Id == flowLesson.FlowId.Value)).Name;
             }
@@ -308,6 +313,7 @@ namespace BL.Services
             var flows = await _context.Flows
                 .AsNoTracking()
                 .Where(f => flowIds.Contains(f.Id))
+                .Where(f=>f.TeacherList != null)
                 .ToDictionaryAsync(f => f.Id, f => f.TeacherList.Select(t => t.ToTeacherDto()).ToList());
 
             // Заполнение данных о потоках

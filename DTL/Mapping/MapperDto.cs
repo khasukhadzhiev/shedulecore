@@ -225,9 +225,9 @@ namespace DTL.Mapping
                 Name = null,
             };
 
-            if(lessonDto.FlowId != null)
+            if(lessonDto.FlowId != null && lessonDto.Flow.TeacherList != null)
             {
-                lessonDto.Teacher.FullName = string.Join(",", lessonDto.Flow.TeacherList.Select(t => t.FullName));
+                lessonDto.Teacher.FullName = string.Join(",", lessonDto?.Flow?.TeacherList?.Select(t => t.FullName));
             }
 
             return lessonDto;

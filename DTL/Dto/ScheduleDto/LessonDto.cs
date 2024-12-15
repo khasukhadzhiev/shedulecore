@@ -6,6 +6,11 @@
     public class LessonDto : BaseDto
     {
         /// <summary>
+        /// Дата и время последнего изменения
+        /// </summary>
+        public DateTime LastModified { get; set; }
+
+        /// <summary>
         /// Id группы
         /// </summary>
         public int StudyClassId { get; set; }

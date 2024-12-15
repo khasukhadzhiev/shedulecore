@@ -10,6 +10,7 @@ using BL.ServiceInterface;
 using DAL;
 using DTL.Mapping;
 using ScheduleVersion = DAL.Entities.Version;
+using Microsoft.IdentityModel.Tokens;
 
 
 namespace BL.Services
@@ -50,7 +51,6 @@ namespace BL.Services
             }
 
             var queryList = queryString.Split(",");
-
             List<QueryScheduleDto> scheduleList = new List<QueryScheduleDto>();
 
             foreach (var query in queryList)
@@ -71,36 +71,7 @@ namespace BL.Services
                     continue;
                 }
 
-                var conditionString = new StringBuilder();
-
-                string paramName = studyClass != null ? "StudyClassId" : teacher != null ? "TeacherId" : null;
-
-                int paramValue = studyClass != null ? studyClass.Id : teacher != null ? teacher.Id : -1;
-
-                conditionString.Append($"{paramName} == {paramValue} AND ");
-
-                if (_version.UseSubWeek && _version.UseSubClass)
-                {
-                    conditionString.Append($"{paramName} == {paramValue} AND RowIndex != null");
-                }
-                else if (_version.UseSubWeek == false && _version.UseSubClass == false)
-                {
-                    conditionString.Append($"IsSubClassLesson == {false} AND IsSubWeekLesson == {false}");
-                }
-                else if (_version.UseSubWeek && _version.UseSubClass == false)
-                {
-                    conditionString.Append($"((IsSubWeekLesson == {true} AND IsSubClassLesson == {false}) OR (IsSubClassLesson == {false} AND IsSubWeekLesson == {false}))");
-                }
-                else if (_version.UseSubWeek == false && _version.UseSubClass)
-                {
-                    conditionString.Append($"((IsSubWeekLesson == {false} AND IsSubClassLesson == {true})  OR (IsSubClassLesson == {false} AND IsSubWeekLesson == {false}))");
-                }
-                else
-                {
-                    conditionString.Append($"((IsSubClassLesson == {true}) OR (IsSubClassLesson == {false} AND IsSubWeekLesson == {false}))");
-                }
-
-                var lessons = await _context.Lessons
+                var lessonsQuery = _context.Lessons
                     .Include(l => l.LessonType)
                     .Include(l => l.Classroom)
                         .ThenInclude(l => l.Building)
@@ -108,15 +79,57 @@ namespace BL.Services
                     .Include(l => l.StudyClass)
                     .Include(l => l.Subject)
                     .Include(l => l.Teacher)
-                    .Where(conditionString.ToString())
-                    .Where(l => l.VersionId == _version.Id)
+                    .Where(l => l.VersionId == _version.Id);
+
+                // Если найден преподаватель, выполняем фильтрацию Flow.TeacherList
+                if (teacher != null)
+                {
+                    lessonsQuery = lessonsQuery
+                        .AsEnumerable() // Переходим на клиентскую оценку
+                        .Where(l => (l.Flow?.TeacherList?.Any(t => t.Id == teacher.Id) == true) || l.TeacherId == teacher.Id)
+                        .AsQueryable(); // Возвращаем обратно в IQueryable для дальнейшего использования
+                }
+
+                // Если найден учебный класс
+                if (studyClass != null)
+                {
+                    lessonsQuery = lessonsQuery.Where(l => l.StudyClassId == studyClass.Id);
+                }
+
+                // Условия для UseSubWeek и UseSubClass
+                if (_version.UseSubWeek && _version.UseSubClass)
+                {
+                    lessonsQuery = lessonsQuery.Where(l => l.RowIndex != null);
+                }
+                else if (!_version.UseSubWeek && !_version.UseSubClass)
+                {
+                    lessonsQuery = lessonsQuery.Where(l => !l.IsSubClassLesson && !l.IsSubWeekLesson);
+                }
+                else if (_version.UseSubWeek && !_version.UseSubClass)
+                {
+                    lessonsQuery = lessonsQuery.Where(l =>
+                        (l.IsSubWeekLesson && !l.IsSubClassLesson) || (!l.IsSubClassLesson && !l.IsSubWeekLesson));
+                }
+                else if (!_version.UseSubWeek && _version.UseSubClass)
+                {
+                    lessonsQuery = lessonsQuery.Where(l =>
+                        (!l.IsSubWeekLesson && l.IsSubClassLesson) || (!l.IsSubClassLesson && !l.IsSubWeekLesson));
+                }
+                else
+                {
+                    lessonsQuery = lessonsQuery.Where(l =>
+                        l.IsSubClassLesson || (!l.IsSubClassLesson && !l.IsSubWeekLesson));
+                }
+
+                // Выполнение запроса
+                var lessons = lessonsQuery
                     .OrderBy(l => l.LessonTypeId)
-                    .ToListAsync();
+                    .ToList();
 
-
+                // Создаем результат для StudyClass или Teacher
                 QueryScheduleDto schedule;
 
-                if (paramName == "StudyClassId")
+                if (studyClass != null)
                 {
                     schedule = new QueryScheduleDto
                     {
@@ -143,17 +156,15 @@ namespace BL.Services
                     };
                 }
 
+                // Уникальность расписания в списке
                 var exist = scheduleList.FirstOrDefault(t => t.Name == schedule.Name);
-
                 if (exist == null)
                 {
                     scheduleList.Add(schedule);
                 }
             }
 
-            var result = scheduleList.Count > 0 ? scheduleList : null;
-
-            return result;
+            return scheduleList.Count > 0 ? scheduleList : null;
         }
 
         public async Task<List<QueryScheduleReportingDto>> GetReportingScheduleAsync(string queryString)

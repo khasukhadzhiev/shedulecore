@@ -213,6 +213,7 @@ namespace DTL.Mapping
                 LessonDay = lesson.LessonDay,
                 LessonNumber = lesson.LessonNumber,
                 WeekNumber = lesson.WeekNumber,
+                LastModified = lesson.LastModified,
 
                 Version = lesson?.Version?.ToVersionDto(),
                 Classroom = lesson?.Classroom?.ToClassroomDto(),

@@ -400,6 +400,9 @@ namespace DAL.Migrations
                     b.Property<bool>("IsSubWeekLesson")
                         .HasColumnType("boolean");
 
+                    b.Property<DateTime>("LastModified")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<int>("LessonTypeId")
                         .HasColumnType("integer");
 

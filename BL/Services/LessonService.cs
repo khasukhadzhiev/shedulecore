@@ -257,36 +257,17 @@ namespace BL.Services
         ///<inheritdoc/>
         public async Task<List<LessonDto>> GetLessonListAsync(int studyClassId, int versionId)
         {
-            var version = await _context.Versions.FirstOrDefaultAsync(v => v.Id == versionId);
+            var version = await _context.Versions
+                .AsNoTracking()
+                .FirstOrDefaultAsync(v => v.Id == versionId);
 
-            var conditionString = new StringBuilder();
-
-            if (version.UseSubWeek && version.UseSubClass)
+            if (version == null)
             {
-                conditionString.Append($"StudyClassId == {studyClassId}");
-            }
-            else if (version.UseSubWeek == false && version.UseSubClass == false)
-            {
-                conditionString.Append($"StudyClassId == {studyClassId}");
-                conditionString.Append($"AND IsSubClassLesson == {false} AND IsSubWeekLesson == {false}");
-            }
-            else if (version.UseSubWeek && version.UseSubClass == false)
-            {
-                conditionString.Append($"StudyClassId == {studyClassId}");
-                conditionString.Append($"AND ((IsSubWeekLesson == {true} AND IsSubClassLesson == {false}) || (IsSubClassLesson == {false} AND IsSubWeekLesson == {false}))");
-            }
-            else if (version.UseSubWeek == false && version.UseSubClass)
-            {
-                conditionString.Append($"StudyClassId == {studyClassId}");
-                conditionString.Append($"AND ((IsSubWeekLesson == {false} AND IsSubClassLesson == {true}) || (IsSubClassLesson == {false} AND IsSubWeekLesson == {false}))");
-            }
-            else
-            {
-                conditionString.Append($"StudyClassId == {studyClassId}");
-                conditionString.Append($"AND (IsSubClassLesson == {true} || (IsSubClassLesson == {false} AND IsSubWeekLesson == {false}))");
+                throw new ArgumentException("Version not found");
             }
 
-            var lessonList = await _context.Lessons
+            // Компиляция условий LINQ
+            IQueryable<Lesson> query = _context.Lessons
                 .AsNoTracking()
                 .Include(l => l.LessonType)
                 .Include(l => l.StudyClass)
@@ -294,19 +275,48 @@ namespace BL.Services
                 .Include(l => l.Teacher)
                 .Include(l => l.Flow)
                 .Include(l => l.Version)
-                .Where(conditionString.ToString())
-                .Where(l => l.VersionId == versionId)
-                .OrderBy(l => l.Subject.Name).ThenBy(l => l.LessonType.Id)
+                .Where(l => l.VersionId == versionId && l.StudyClassId == studyClassId);
+
+            if (!version.UseSubWeek && !version.UseSubClass)
+            {
+                query = query.Where(l => !l.IsSubClassLesson && !l.IsSubWeekLesson);
+            }
+            else if (version.UseSubWeek && !version.UseSubClass)
+            {
+                query = query.Where(l =>
+                    (l.IsSubWeekLesson && !l.IsSubClassLesson) || (!l.IsSubClassLesson && !l.IsSubWeekLesson));
+            }
+            else if (!version.UseSubWeek && version.UseSubClass)
+            {
+                query = query.Where(l =>
+                    (!l.IsSubWeekLesson && l.IsSubClassLesson) || (!l.IsSubClassLesson && !l.IsSubWeekLesson));
+            }
+
+            var lessonList = await query
+                .OrderBy(l => l.Subject.Name)
+                .ThenBy(l => l.LessonType.Id)
                 .Select(l => l.ToLessonDto())
                 .ToListAsync();
 
+            // Предварительная загрузка данных о потоках
+            var flowIds = lessonList
+                .Where(l => l.FlowId != null)
+                .Select(l => l.FlowId.Value)
+                .Distinct()
+                .ToList();
+
+            var flows = await _context.Flows
+                .AsNoTracking()
+                .Where(f => flowIds.Contains(f.Id))
+                .ToDictionaryAsync(f => f.Id, f => f.TeacherList.Select(t => t.ToTeacherDto()).ToList());
+
+            // Заполнение данных о потоках
             foreach (var lesson in lessonList)
             {
-                var flow = await _context.Flows
-                 .AsNoTracking()
-                 .FirstOrDefaultAsync(f => f.Id == lesson.FlowId.Value);
-
-                lesson.Flow.TeacherList = flow.TeacherList.Select(t => t.ToTeacherDto()).ToList();
+                if (lesson.FlowId != null && flows.TryGetValue(lesson.FlowId.Value, out var teacherList))
+                {
+                    lesson.Flow.TeacherList = teacherList;
+                }
             }
 
             return lessonList;

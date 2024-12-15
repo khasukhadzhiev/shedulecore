@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DAL.Migrations
 {
     [DbContext(typeof(ScheduleHighSchoolDb))]
-    [Migration("20241213221622_InitialDB")]
+    [Migration("20241215204256_InitialDB")]
     partial class InitialDB
     {
         /// <inheritdoc />
@@ -402,6 +402,9 @@ namespace DAL.Migrations
 
                     b.Property<bool>("IsSubWeekLesson")
                         .HasColumnType("boolean");
+
+                    b.Property<DateTime>("LastModified")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("LessonTypeId")
                         .HasColumnType("integer");

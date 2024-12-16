@@ -196,16 +196,9 @@ namespace DTL.Mapping
                 StudyClass = studyClassReportingDto?.StudyClass?.ToStudyClass(),
                 Classroom = studyClassReportingDto?.Classroom?.ToClassroom(),
                 Version = studyClassReportingDto?.Version?.ToVersion(),
+                Date = studyClassReportingDto.Date
             };
 
-            if (string.IsNullOrEmpty(studyClassReportingDto?.Date))
-            {
-                studyClassReporting.Date = null;
-            }
-            else
-            {
-                studyClassReporting.Date = DateTime.Parse(studyClassReportingDto?.Date);
-            }
 
             return studyClassReporting;
         }

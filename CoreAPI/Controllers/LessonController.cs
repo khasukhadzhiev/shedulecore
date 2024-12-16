@@ -95,7 +95,7 @@ namespace CoreAPI.Controllers
         [Route("GetLessonList")]
         public async Task<IActionResult> GetLessonList(int studyClassId, int versionId)
         {
-            var lessonList = await _lessonService.GetLessonListAsync(studyClassId, versionId);
+            var lessonList = await _lessonService.GetAllLessonListByStudyClassAsync(studyClassId, versionId);
 
             return Ok(lessonList);
         }

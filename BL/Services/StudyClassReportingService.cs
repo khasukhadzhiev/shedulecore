@@ -55,6 +55,11 @@ namespace BL.Services
         {
             string result = null;
 
+            if (studyClassReportingDto.Date != null)
+            {
+                studyClassReportingDto.Date = studyClassReportingDto.Date.Value.ToUniversalTime();
+            }
+
             var exist = await _context.StudyClassReporting
                 .AnyAsync(r =>
                 r.StudyClassId == studyClassReportingDto.StudyClassId
@@ -94,15 +99,7 @@ namespace BL.Services
                 studyClassReporting.ReportingTypeId = studyClassReportingDto.ReportingTypeId;
                 studyClassReporting.VersionId = studyClassReportingDto.VersionId;
                 studyClassReporting.ClassroomId = studyClassReportingDto?.ClassroomId;
-
-                if (string.IsNullOrEmpty(studyClassReportingDto?.Date))
-                {
-                    studyClassReporting.Date = null;
-                }
-                else
-                {
-                    studyClassReporting.Date = DateTime.Parse(studyClassReportingDto?.Date);
-                }
+                studyClassReporting.Date = studyClassReportingDto.Date;
 
                 await _context.SaveChangesAsync();
             }

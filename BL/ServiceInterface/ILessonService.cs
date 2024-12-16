@@ -65,7 +65,7 @@ namespace BL.ServiceInterface
         /// <param name="studyClassId">Id группы</param>
         /// <param name="versionId">Id версии</param>
         /// <returns>Список занятий</returns>
-        Task<List<LessonDto>> GetLessonListAsync(int studyClassId, int versionId);
+        Task<List<LessonDto>> GetAllLessonListByStudyClassAsync(int studyClassId, int versionId);
 
         /// <summary>
         /// Установить значения распределения занятия. (Индекс строки и индекс столбца в таблице)

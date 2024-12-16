@@ -263,7 +263,7 @@ namespace DTL.Mapping
                 StudyClassId = studyClassReporting.StudyClassId,
                 ClassroomId = studyClassReporting?.ClassroomId,
                 VersionId = studyClassReporting.VersionId,
-                Date = studyClassReporting?.Date?.ToString("o"),
+                Date = studyClassReporting?.Date,
                 Subject = studyClassReporting?.Subject?.ToSubjectDto(),
                 Teacher = studyClassReporting?.Teacher?.ToTeacherDto(),
                 ReportingType = studyClassReporting?.ReportingType?.ToReportingTypeDto(),

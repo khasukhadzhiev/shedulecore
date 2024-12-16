@@ -14,7 +14,7 @@
 
         public int VersionId { get; set; }
 
-        public string Date { get; set; }
+        public DateTime? Date { get; set; }
 
         public StudyClassDto StudyClass { get; set; }
 

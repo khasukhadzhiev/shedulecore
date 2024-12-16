@@ -260,7 +260,7 @@ namespace BL.Services
         }
 
         ///<inheritdoc/>
-        public async Task<List<LessonDto>> GetLessonListAsync(int studyClassId, int versionId)
+        public async Task<List<LessonDto>> GetAllLessonListByStudyClassAsync(int studyClassId, int versionId)
         {
             var version = await _context.Versions
                 .AsNoTracking()

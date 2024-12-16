@@ -308,7 +308,7 @@ export default {
         reportingType: {},
         classroom: null,
         versionId: Number,
-        date: '',
+        date: null,
       },
       studyClassReportingList: [],
       fields: [
@@ -445,6 +445,8 @@ export default {
         versionId: this.version.id,
       };
 
+      studyCLassReporting.date = studyCLassReporting.date == null || studyCLassReporting.date =="" ? null: studyCLassReporting.date;
+
       AddStudyClassReporting(studyCLassReporting)
         .then(() => {
           this.$ntf.Success("Отчетность добавлена!");
@@ -470,6 +472,8 @@ export default {
         date: studyClassReport.date,
         versionId: this.version.id,
       };
+
+      studyCLassReporting.date = studyCLassReporting.date == null || studyCLassReporting.date =="" ? null: studyCLassReporting.date;
 
       EditStudyClassReporting(studyCLassReporting)
         .then(() => {

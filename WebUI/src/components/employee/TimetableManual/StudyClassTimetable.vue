@@ -48,7 +48,9 @@
               :id="studyClass.name + studyClass.id"
               :colspan="version.useSubClass ? 2 : 1"
             >
-              {{ studyClass.name }}
+              {{ studyClass.name }}             
+              <br/>
+              <span class="lastModifiedSpan">Последние изменения: {{getLastModifiedDate(setLessonList)}}</span>
               <b-tooltip
                 :target="studyClass.name + studyClass.id"
                 triggers="hover"
@@ -986,6 +988,28 @@ export default {
       }
     },
     //#endregion
+
+    //получить последнюю дату изменения
+    getLastModifiedDate(lessonList) {
+    // Находим последнюю дату
+      let latestDate = lessonList.reduce((latest, lesson) => {
+          const lessonDate = new Date(lesson.lastModified);
+          return lessonDate > latest ? lessonDate : latest;
+      }, null);
+
+      if(latestDate != null){
+        return latestDate.toLocaleDateString("ru-RU", {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit"
+        });
+      }
+      else{
+        return "неизвестно";
+      }
+    }
   },
   created() {
     this.getClassroomList();
@@ -1222,5 +1246,12 @@ td {
   border: 1px solid #919191;
   margin-bottom: -1px;
   background-color: inherit;
+}
+
+.lastModifiedSpan {
+  font-size: 0.8rem;
+  font-weight: bold;
+  letter-spacing: 0.05em;
+  color: #a2acba;
 }
 </style>

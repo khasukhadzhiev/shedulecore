@@ -506,28 +506,33 @@ namespace BL.Services
         ///<inheritdoc/>
         public async Task<List<LessonDto>> GetFlowLessonFilterListAsync(int studyClassId, int versionId, string filter)
         {
-            var flowLessonList = await _context.Lessons
+            // Загружаем данные одним запросом
+            var lessons = await _context.Lessons
                 .AsNoTracking()
                 .Include(l => l.LessonType)
-                .Include(l=> l.Flow)
-                    .ThenInclude(f=>f.TeacherList)
+                .Include(l => l.Flow)
                 .Include(l => l.Subject)
                 .Include(l => l.StudyClass)
-                .Include(l => l.Subject)
                 .Include(l => l.Teacher)
                 .Include(l => l.Version)
-                .Where(f => f.StudyClassId == studyClassId
-                            && f.FlowId != null
-                            && f.VersionId == versionId)
-                .Where(l => l.Subject.Name.Contains(filter) || (l.Teacher.FirstName + l.Teacher.Name + l.Teacher.MiddleName).Contains(filter))
-                .OrderBy(l => l.Subject.Name).ThenBy(l => l.LessonType.Id)
-                .Select(f => f.ToLessonDto())
+                .Where(l => l.StudyClassId == studyClassId
+                            && l.FlowId != null
+                            && l.VersionId == versionId)
                 .ToListAsync();
 
-            foreach (var flowLesson in flowLessonList)
-            {
-                flowLesson.FlowStudyClassNames = (await _context.Flows.FirstOrDefaultAsync(f => f.Id == flowLesson.FlowId.Value)).Name;
-            }
+            // Фильтруем в памяти по TeacherList и StudyClassList
+            var flowLessonList = lessons
+                .Where(l =>
+                    (l.Flow.TeacherList != null && l.Flow.TeacherList.Any(t => ((t.FirstName ?? "")
+                                                                                + (t.Name ?? "")
+                                                                                + (t.MiddleName ?? "")).Contains(filter)))
+                    || (l.Flow.StudyClassList != null && l.Flow.StudyClassList.Any(s => s.Name.Contains(filter)))
+                    || l.Subject.Name.Contains(filter)
+                )
+                .Select(l => l.ToLessonDto())
+                .OrderBy(l => l.Subject.Name)
+                .ThenBy(l => l.LessonType.Id)
+                .ToList();
 
             return flowLessonList;
         }

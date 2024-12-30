@@ -9,7 +9,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DAL.Migrations
 {
     /// <inheritdoc />
-    public partial class InitializeDB : Migration
+    public partial class InitialDB : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -87,7 +87,9 @@ namespace DAL.Migrations
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    Name = table.Column<string>(type: "text", nullable: true)
+                    Name = table.Column<string>(type: "text", nullable: true),
+                    TeacherList = table.Column<string>(type: "text", nullable: true),
+                    StudyClassList = table.Column<string>(type: "text", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -341,6 +343,7 @@ namespace DAL.Migrations
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    LastModified = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     StudyClassId = table.Column<int>(type: "integer", nullable: false),
                     TeacherId = table.Column<int>(type: "integer", nullable: false),
                     SubjectId = table.Column<int>(type: "integer", nullable: false),
@@ -528,7 +531,7 @@ namespace DAL.Migrations
             migrationBuilder.InsertData(
                 table: "Versions",
                 columns: new[] { "Id", "IsActive", "MaxLesson", "Name", "ShowClassShift", "ShowEducationForm", "ShowReportingIds", "UseSubClass", "UseSubWeek", "UseSunday" },
-                values: new object[] { 1, true, 6, "Расписание на 2023 год.", false, false, null, false, false, true });
+                values: new object[] { 1, true, 6, "Расписание на 2024 год.", false, false, null, false, false, true });
 
             migrationBuilder.InsertData(
                 table: "Accounts",

@@ -14,6 +14,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using DAL;
 using DAL.Entities.Schedule;
+using DTL.Mapping;
 
 namespace BL.Services
 {
@@ -150,7 +151,7 @@ namespace BL.Services
                         importDataModel.Subdivision = reader.GetValue(0).ToString().Trim().ToUpper();
                         importDataModel.StudyClass = reader.GetValue(1).ToString().Trim().ToUpper();
                         importDataModel.StudentsCount = Convert.ToInt32(reader.GetValue(2));
-                        importDataModel.Teacher = Regex.Replace(reader.GetValue(3).ToString().Trim().ToUpper(), "[ ]+", " ");
+                        importDataModel.Teacher = reader.GetValue(3).ToString().Trim().ToUpper();
                         importDataModel.Subject = reader.GetValue(4).ToString().Trim().ToUpper();
                         importDataModel.LessonType = reader.GetValue(5).ToString().Trim().ToUpper();
                         importDataModel.IsSubclassLesson = Convert.ToBoolean(reader.GetValue(6));
@@ -206,18 +207,35 @@ namespace BL.Services
 
 
                     //Добавляем преподавателей
-                    var teacherList = dataList
+                    var teacherDataList = dataList
                         .Select(s => s.Teacher)
                         .Distinct();
 
-                    foreach (var teacher in teacherList)
+                    foreach (var teacherData in teacherDataList)
                     {
-                        await _teacherService.AddTeacherAsync(new TeacherDto
+                        var teacherList = teacherData.Split(",");
+
+                        if (teacherList.Length > 1)
                         {
-                            FirstName = teacher?.Split(" ")?.FirstOrDefault(),
-                            Name = teacher?.Split(" ")?.Skip(1)?.FirstOrDefault(),
-                            MiddleName = teacher?.Split(" ")?.Skip(2)?.FirstOrDefault(),
-                        }, versionId);
+                            foreach (var teacher in teacherList)
+                            {
+                                await _teacherService.AddTeacherAsync(new TeacherDto
+                                {
+                                    FirstName = teacher?.Split(" ")?.FirstOrDefault(),
+                                    Name = teacher?.Split(" ")?.Skip(1)?.FirstOrDefault(),
+                                    MiddleName = teacher?.Split(" ")?.Skip(2)?.FirstOrDefault(),
+                                }, versionId);
+                            }
+                        }
+                        else
+                        {
+                            await _teacherService.AddTeacherAsync(new TeacherDto
+                            {
+                                FirstName = teacherData?.Split(" ")?.FirstOrDefault(),
+                                Name = teacherData?.Split(" ")?.Skip(1)?.FirstOrDefault(),
+                                MiddleName = teacherData?.Split(" ")?.Skip(2)?.FirstOrDefault(),
+                            }, versionId);
+                        }
                     }
 
 
@@ -290,9 +308,13 @@ namespace BL.Services
 
                             var flowStudyClassNames = row.FlowStudyClassNames.ToUpper().Replace(" ", "").Split(",");
 
-                            var flowStudyClassIds = await _context.StudyClasses.Where(s => flowStudyClassNames.Contains(s.Name)).Select(s => s.Id).ToListAsync();
+                            var flowStudyClassList = await _context.StudyClasses.Where(s => flowStudyClassNames.Contains(s.Name)).Select(s => s.ToStudyClassDto()).ToListAsync();
 
-                            await _lessonService.AddFlowLessonAsync(new LessonDto
+                            var flowTeachersNames = row.Teacher.ToUpper().Trim().Split(",");
+
+                            var flowTeacherList = await _context.Teachers.Where(t => flowTeachersNames.Contains(t.FirstName + " " + t.Name + " " + t.MiddleName)).Select(t => t.ToTeacherDto()).ToListAsync();
+
+                            var lessonDto = new LessonDto
                             {
                                 StudyClassId = srudyClass.Id,
                                 TeacherId = teacher.Id,
@@ -301,7 +323,18 @@ namespace BL.Services
                                 IsParallel = row.IsParallel,
                                 IsSubClassLesson = row.IsSubclassLesson,
                                 IsSubWeekLesson = row.IsSubweekLesson,
-                            }, versionId);
+                            };
+
+                            var flowDto = new FlowDto
+                            {
+                                Name = row.FlowStudyClassNames.ToUpper().Replace(" ", ""),
+                                TeacherList = flowTeacherList,
+                                StudyClassList = flowStudyClassList,
+                            };
+
+                            lessonDto.Flow = flowDto;
+
+                            await _lessonService.AddFlowLessonAsync(lessonDto, versionId);
                         }
                         else if (row.IsParallel)
                         {

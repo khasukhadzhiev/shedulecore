@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DAL.Migrations
 {
     [DbContext(typeof(ScheduleHighSchoolDb))]
-    [Migration("20241215204500_AddlastModifLessonAndFlowTeacherList")]
-    partial class AddlastModifLessonAndFlowTeacherList
+    [Migration("20241230105203_InitialDB")]
+    partial class InitialDB
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

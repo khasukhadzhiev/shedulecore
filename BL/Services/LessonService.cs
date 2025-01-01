@@ -391,10 +391,10 @@ namespace BL.Services
         {
             var lesson = await _context.Lessons.Include(l =>l.Subject).Include(l=> l.Teacher).FirstOrDefaultAsync(l => l.Id == lessonDto.Id);
 
-            lessonDto.Flow.StudyClassList = lessonDto.Flow.StudyClassList.DistinctBy(s=>s.Id).ToList();
-
             if (lesson.FlowId != null)
             {
+                lessonDto.Flow.StudyClassList = lessonDto.Flow.StudyClassList.DistinctBy(s => s.Id).ToList();
+
                 var flowName = string.Join(", ", lessonDto.Flow.StudyClassList.Select(s => s.Name));
 
                 var flowLessonList = await _context.Lessons

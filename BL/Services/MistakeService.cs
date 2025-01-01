@@ -11,6 +11,7 @@ using BL.ServiceInterface;
 using DAL;
 using Version = DAL.Entities.Version;
 using Infrastructure.Models;
+using DocumentFormat.OpenXml.Bibliography;
 
 namespace BL.Services
 {
@@ -29,119 +30,117 @@ namespace BL.Services
         ///<inheritdoc/>
         public async Task<List<string>> GetMistakesByStudyClassAsync(int studyClassId, int versionId)
         {
-            // Загружаем версию и класс
-            var version = await _context.Versions.AsNoTracking().FirstOrDefaultAsync(v => v.Id == versionId);
-            if (version == null) throw new Exception("Версия расписания не найдена!");
+            ConcurrentBag<MistakeListModel> mistakeListResult = new ConcurrentBag<MistakeListModel>();
 
-            var studyClass = await _context.StudyClasses
-                .AsNoTracking()
+            var version = await _context.Versions.FirstOrDefaultAsync(v => v.Id == versionId);
+
+            if (version == null)
+            {
+                throw new Exception("Версия расписания не найдена!");
+            }
+
+            var studyClass = _context.StudyClasses
                 .Include(s => s.ClassShift)
-                .FirstOrDefaultAsync(s => s.Id == studyClassId);
-            if (studyClass == null) throw new Exception("Учебный класс не найден!");
+                .First(l => l.Id == studyClassId);
 
-            // Загружаем уроки
-            var allLessons = await _context.Lessons
-                .AsNoTracking()
-                .Where(l => l.VersionId == version.Id && l.RowIndex != null && l.StudyClass.ClassShiftId == studyClass.ClassShiftId)
+            var studyClassLessons = _context.Lessons
+                .Include(l => l.StudyClass)
+                .Where(l => l.VersionId == versionId)
+                .Where(l => l.RowIndex != null)
+                .Where(l => l.StudyClassId == studyClassId && l.StudyClass.ClassShiftId == studyClass.ClassShiftId);
+
+            var intersectLessons = await _context.Lessons
+                .AsQueryable()
+                .Where(l => l.VersionId == versionId)
+                .Where(l => l.RowIndex != null)
                 .Include(l => l.Teacher)
-                .Include(l => l.StudyClass).ThenInclude(s => s.ClassShift)
-                .Include(l => l.StudyClass).ThenInclude(s => s.EducationForm)
+                .Include(l => l.StudyClass)
+                    .ThenInclude(s => s.ClassShift)
+                .Include(l => l.StudyClass)
+                    .ThenInclude(s => s.EducationForm)
                 .Include(l => l.Classroom)
-                .Include(l => l.Flow)
+                .Include(l => l.Version)
+                .Where(l => l.StudyClass.ClassShiftId == studyClass.ClassShiftId)
+                .Where(l => studyClassLessons.Any(l2 => l.TeacherId == l2.TeacherId
+                                    || (l.ClassroomId == l2.ClassroomId && l.ClassroomId != null && l2.ClassroomId != null)))
                 .ToListAsync();
 
-            var myLessons = allLessons.Where(l => l.StudyClassId == studyClassId).ToList();
-            var otherLessons = allLessons.Where(l => l.StudyClassId != studyClassId).ToList();
-
-            var mistakeListResult = new ConcurrentBag<MistakeListModel>();
-
-            // Обработка уроков
-            foreach (var myLesson in myLessons)
+            foreach ( var lesson in intersectLessons)
             {
-                var possibleRowIndexes = new HashSet<int?> { myLesson.RowIndex };
-                if (version.UseSubWeek)
+                var rowIndexSecond = lesson.RowIndex >= 0 && lesson.RowIndex % 2 != 0 ? lesson.RowIndex - 1 : lesson.RowIndex + 1;
+
+                var conditionString = new StringBuilder();
+
+                if (!lesson.IsSubClassLesson && !lesson.IsSubWeekLesson)
                 {
-                    var alternateRowIndex = (myLesson.RowIndex >= 0 && myLesson.RowIndex % 2 != 0) ? myLesson.RowIndex - 1 : myLesson.RowIndex + 1;
-                    possibleRowIndexes.Add(alternateRowIndex);
+                    conditionString.Append($"(RowIndex == {lesson.RowIndex}" + (version.UseSubWeek ? $" || RowIndex == {rowIndexSecond}" : "") + ")");
+                    conditionString.Append($" AND ((ClassroomId == {lesson.ClassroomId ?? -1} || TeacherId == {lesson.TeacherId}))");
+                    conditionString.Append($" AND ((FlowId == null AND  {lesson.FlowId == null}) || FlowId != {lesson.FlowId ?? -1})");
+                }
+                else if (!lesson.IsSubClassLesson && lesson.IsSubWeekLesson)
+                {
+                    conditionString.Append($"(RowIndex == {lesson.RowIndex} || (IsSubWeekLesson == {false} && RowIndex == {rowIndexSecond}))");
+                    conditionString.Append($" AND ((ClassroomId == {lesson.ClassroomId ?? -1} || TeacherId == {lesson.TeacherId}))");
+                    conditionString.Append($" AND FlowId != {lesson.FlowId ?? -1}");
+                }
+                else if (lesson.IsSubClassLesson && !lesson.IsSubWeekLesson)
+                {
+                    conditionString.Append($"RowIndex == {lesson.RowIndex}" + (version.UseSubWeek ? $" || RowIndex == {rowIndexSecond}" : ""));
+                    conditionString.Append($" AND ((ClassroomId == {lesson.ClassroomId ?? -1} || TeacherId == {lesson.TeacherId}))");
+                }
+                else
+                {
+                    conditionString.Append($"(RowIndex == {lesson.RowIndex} || (IsSubWeekLesson == {false} && RowIndex == {rowIndexSecond}))");
+                    conditionString.Append($" AND ((ClassroomId == {lesson.ClassroomId ?? -1} || TeacherId == {lesson.TeacherId}))");
                 }
 
-                var conflictingLessons = otherLessons
-                    .Where(ol => ol.RowIndex != null && possibleRowIndexes.Contains(ol.RowIndex) && (myLesson.Flow?.Id != ol.Flow?.Id))
-                    .ToList();
+                var mistakeLessonList = intersectLessons
+                    .AsQueryable()
+                    .Where(conditionString.ToString())
+                    .Where(l => l.Id != lesson.Id);
 
-                foreach (var conflict in conflictingLessons)
+                var mistakeTeacherLessonList = mistakeLessonList
+                    .Where(l => l.Id != lesson.Id)
+                    .Where(l => l.TeacherId == lesson.TeacherId);
+
+                var mistakeClassroomLessonList = mistakeLessonList
+                    .Where(l => l.Id != lesson.Id)
+                    .Where(l => l.ClassroomId == lesson.ClassroomId && l.ClassroomId != null && lesson.ClassroomId != null);
+
+                foreach (var mistake in mistakeTeacherLessonList)
                 {
-                    if (IsTeacherConflict(myLesson, conflict))
+                    mistakeListResult.Add(new MistakeListModel
                     {
-                        AddMistake(mistakeListResult, "Накладка по преподавателю:", GetTeacherFIO(conflict.Teacher), conflict, version);
-                    }
+                        Day = GetDayName(mistake.RowIndex.Value, version),
+                        Para = GetLessonNumber(mistake.RowIndex.Value, version),
+                        MistakeType = "Накладка по преподавателю: ",
+                        MistakeObject = GetTeacherFIO(mistake.Teacher),
+                        StudyClass = mistake.StudyClass.Name
+                    });
+                }
 
-                    if (IsClassroomConflict(myLesson, conflict))
-                    {
-                        AddMistake(mistakeListResult, "Накладка по аудитории:", conflict.Classroom?.Name, conflict, version);
-                    }
+                foreach (var mistake in mistakeClassroomLessonList)
+                {
+                    var message = $"{GetDayName(mistake.RowIndex.Value, version)} | {GetLessonNumber(mistake.RowIndex.Value, version)} | Накладка по аудитории: {mistake.Classroom.Name} | {mistake.StudyClass.Name}";
 
-                    if (IsStudyClassConflict(myLesson, conflict))
+                    mistakeListResult.Add(new MistakeListModel
                     {
-                        AddMistake(mistakeListResult, "Накладка по группе:", conflict.StudyClass.Name, conflict, version);
-                    }
+                        Day = GetDayName(mistake.RowIndex.Value, version),
+                        Para = GetLessonNumber(mistake.RowIndex.Value, version),
+                        MistakeType = "Накладка по аудитории:",
+                        MistakeObject = mistake.Classroom.Name,
+                        StudyClass = mistake.StudyClass.Name
+                    });
                 }
             }
 
-            // Форматирование результата
-            var dayNames = new[] { "Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье" };
             return mistakeListResult
-                .OrderBy(m => Array.IndexOf(dayNames, m.Day))
-                .ThenBy(m => m.Para)
+                .OrderBy(m => dayNames.IndexOf(m.Day))
+                    .ThenBy(m => m.Para)
                 .Select(m => $"{m.Day} | {m.Para} | {m.MistakeType} {m.MistakeObject} | {m.StudyClass}")
                 .Distinct()
                 .ToList();
         }
-
-
-        private bool IsTeacherConflict(Lesson myLesson, Lesson otherLesson)
-        {
-            if (myLesson.TeacherId == otherLesson.TeacherId)
-                return true;
-
-            var myTeachers = myLesson.Flow?.TeacherList?.Select(t => t.Id) ?? Enumerable.Empty<int>();
-            var otherTeachers = otherLesson.Flow?.TeacherList?.Select(t => t.Id) ?? Enumerable.Empty<int>();
-
-            return myTeachers.Any(t => t == otherLesson.TeacherId) ||
-                   otherTeachers.Any(t => t == myLesson.TeacherId) ||
-                   myTeachers.Intersect(otherTeachers).Any();
-        }
-
-        private bool IsClassroomConflict(Lesson myLesson, Lesson otherLesson)
-        {
-            return myLesson.ClassroomId == otherLesson.ClassroomId;
-        }
-
-        private bool IsStudyClassConflict(Lesson myLesson, Lesson otherLesson)
-        {
-            if (myLesson.StudyClassId == otherLesson.StudyClassId)
-                return true;
-
-            var myClasses = myLesson.Flow?.StudyClassList?.Select(c => c.Id) ?? Enumerable.Empty<int>();
-            var otherClasses = otherLesson.Flow?.StudyClassList?.Select(c => c.Id) ?? Enumerable.Empty<int>();
-
-            return myClasses.Any(c => c == otherLesson.StudyClassId) ||
-                   otherClasses.Any(c => c == myLesson.StudyClassId) ||
-                   myClasses.Intersect(otherClasses).Any();
-        }
-
-        private void AddMistake(ConcurrentBag<MistakeListModel> mistakeList, string mistakeType, string mistakeObject, Lesson lesson, Version version)
-        {
-            mistakeList.Add(new MistakeListModel
-            {
-                Day = GetDayName(lesson.RowIndex.Value, version),
-                Para = GetLessonNumber(lesson.RowIndex.Value, version),
-                MistakeType = mistakeType,
-                MistakeObject = mistakeObject,
-                StudyClass = lesson.StudyClass.Name
-            });
-        }
-
 
         ///<inheritdoc/>
         public async Task<List<string>> GetStudyClassNamesWithMistakesAsync()

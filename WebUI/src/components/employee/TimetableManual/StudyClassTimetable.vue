@@ -1032,7 +1032,7 @@ export default {
   watch: {
     version: function () {
       this.createTable();
-      this.getLessonList();
+      //this.getLessonList();
     },
   },
   props: {},

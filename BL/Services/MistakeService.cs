@@ -76,22 +76,26 @@ namespace BL.Services
                     conditionString.Append($"(RowIndex == {lesson.RowIndex}" + (version.UseSubWeek ? $" || RowIndex == {rowIndexSecond}" : "") + ")");
                     conditionString.Append($" AND ((ClassroomId == {lesson.ClassroomId ?? -1} || TeacherId == {lesson.TeacherId}))");
                     conditionString.Append($" AND ((FlowId == null AND  {lesson.FlowId == null}) || FlowId != {lesson.FlowId ?? -1})");
+                    conditionString.Append($" AND (StudyClassId == {studyClass.Id} || {lesson.StudyClassId == studyClass.Id})");
                 }
                 else if (!lesson.IsSubClassLesson && lesson.IsSubWeekLesson)
                 {
                     conditionString.Append($"(RowIndex == {lesson.RowIndex} || (IsSubWeekLesson == {false} && RowIndex == {rowIndexSecond}))");
                     conditionString.Append($" AND ((ClassroomId == {lesson.ClassroomId ?? -1} || TeacherId == {lesson.TeacherId}))");
                     conditionString.Append($" AND FlowId != {lesson.FlowId ?? -1}");
+                    conditionString.Append($" AND (StudyClassId == {studyClass.Id} || {lesson.StudyClassId == studyClass.Id})");
                 }
                 else if (lesson.IsSubClassLesson && !lesson.IsSubWeekLesson)
                 {
                     conditionString.Append($"RowIndex == {lesson.RowIndex}" + (version.UseSubWeek ? $" || RowIndex == {rowIndexSecond}" : ""));
                     conditionString.Append($" AND ((ClassroomId == {lesson.ClassroomId ?? -1} || TeacherId == {lesson.TeacherId}))");
+                    conditionString.Append($" AND (StudyClassId == {studyClass.Id} || {lesson.StudyClassId == studyClass.Id})");
                 }
                 else
                 {
                     conditionString.Append($"(RowIndex == {lesson.RowIndex} || (IsSubWeekLesson == {false} && RowIndex == {rowIndexSecond}))");
                     conditionString.Append($" AND ((ClassroomId == {lesson.ClassroomId ?? -1} || TeacherId == {lesson.TeacherId}))");
+                    conditionString.Append($" AND (StudyClassId == {studyClass.Id} || {lesson.StudyClassId == studyClass.Id})");
                 }
 
                 var mistakeLessonList = intersectLessons
@@ -135,11 +139,19 @@ namespace BL.Services
             }
 
             return mistakeListResult
-                .OrderBy(m => dayNames.IndexOf(m.Day))
-                    .ThenBy(m => m.Para)
-                .Select(m => $"{m.Day} | {m.Para} | {m.MistakeType} {m.MistakeObject} | {m.StudyClass}")
-                .Distinct()
-                .ToList();
+                    .GroupBy(m => new { m.Day, m.Para, m.MistakeType, m.MistakeObject })
+                    .Select(group => new
+                    {
+                        group.Key.Day,
+                        group.Key.Para,
+                        group.Key.MistakeType,
+                        group.Key.MistakeObject,
+                        StudyClasses = string.Join(", ", group.Select(m => m.StudyClass).Distinct())
+                    })
+                    .OrderBy(g => dayNames.IndexOf(g.Day))
+                    .ThenBy(g => g.Para)
+                    .Select(g => $"{g.Day} | {g.Para} | {g.MistakeType} {g.MistakeObject} | {g.StudyClasses}")
+                    .ToList();
         }
 
         ///<inheritdoc/>

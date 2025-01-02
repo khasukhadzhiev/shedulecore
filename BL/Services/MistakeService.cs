@@ -12,6 +12,7 @@ using DAL;
 using Version = DAL.Entities.Version;
 using Infrastructure.Models;
 using DocumentFormat.OpenXml.Bibliography;
+using DTL.Dto.ScheduleDto;
 
 namespace BL.Services
 {
@@ -30,6 +31,7 @@ namespace BL.Services
         ///<inheritdoc/>
         public async Task<List<string>> GetMistakesByStudyClassAsync(int studyClassId, int versionId)
         {
+            // Получаем версию и учебную группу
             var version = await _context.Versions.FirstOrDefaultAsync(v => v.Id == versionId)
                 ?? throw new Exception("Версия расписания не найдена!");
 
@@ -38,22 +40,21 @@ namespace BL.Services
                 .FirstOrDefaultAsync(l => l.Id == studyClassId)
                 ?? throw new Exception("Учебная группа не найдена!");
 
-            // Получаем все занятия текущей группы
+            // Получаем все занятия текущей группы и потенциально пересекающиеся занятия
             var currentClassLessons = await _context.Lessons
-                .Where(l => l.VersionId == versionId
-                    && l.RowIndex != null
-                    && l.StudyClassId == studyClassId)
+                .Where(l => l.VersionId == versionId &&
+                            l.RowIndex != null &&
+                            l.StudyClassId == studyClassId)
                 .Include(l => l.Teacher)
                 .Include(l => l.Flow)
                 .Include(l => l.StudyClass)
                 .Include(l => l.Classroom)
                 .ToListAsync();
 
-            // Получаем все потенциально пересекающиеся занятия в той же смене
             var allIntersectingLessons = await _context.Lessons
-                .Where(l => l.VersionId == versionId
-                    && l.RowIndex != null
-                    && l.StudyClass.ClassShiftId == studyClass.ClassShiftId)
+                .Where(l => l.VersionId == versionId &&
+                            l.RowIndex != null &&
+                            l.StudyClass.ClassShiftId == studyClass.ClassShiftId)
                 .Include(l => l.Teacher)
                 .Include(l => l.Flow)
                 .Include(l => l.StudyClass)
@@ -62,110 +63,78 @@ namespace BL.Services
 
             var conflicts = new ConcurrentBag<MistakeListModel>();
 
+            // Проверяем конфликты для каждого занятия
             foreach (var lesson in currentClassLessons)
             {
-                var rowIndexSecond = GetSecondWeekRowIndex(lesson.RowIndex.Value);
-                var timeSlotLessons = GetLessonsInTimeSlot(allIntersectingLessons, lesson, rowIndexSecond, version.UseSubWeek);
-
-                foreach (var otherLesson in timeSlotLessons.Where(l => l.Id != lesson.Id))
+                // Получаем все занятия в том же временном слоте
+                var timeSlotLessons = allIntersectingLessons.Where(l =>
                 {
-                    // Пропускаем проверку, если оба занятия в одном потоке
-                    if (lesson.FlowId != null && otherLesson.FlowId != null && lesson.FlowId == otherLesson.FlowId)
-                        continue;
+                    if (l.Id == lesson.Id) return false;
 
-                    // Получаем список ID преподавателей из каждого занятия
-                    var lesson1TeacherIds = new HashSet<int>();
-                    var lesson2TeacherIds = new HashSet<int>();
+                    var currentIndex = lesson.RowIndex!.Value;
+                    var otherIndex = l.RowIndex!.Value;
+                    var secondWeekIndex = otherIndex >= 0 && otherIndex % 2 != 0 ? otherIndex - 1 : otherIndex + 1;
 
-                    // Добавляем основного преподавателя
-                    lesson1TeacherIds.Add(lesson.TeacherId);
-                    lesson2TeacherIds.Add(otherLesson.TeacherId);
+                    // Проверяем совпадение по времени с учетом подгрупп
+                    var baseWeekMatches = currentIndex == otherIndex;
+                    var oppositeWeekMatches = version.UseSubWeek && currentIndex == secondWeekIndex;
 
-                    // Добавляем преподавателей из потока
-                    if (lesson.Flow?.TeacherList != null)
-                        foreach (var teacher in lesson.Flow.TeacherList)
-                            lesson1TeacherIds.Add(teacher.Id);
-
-                    if (otherLesson.Flow?.TeacherList != null)
-                        foreach (var teacher in otherLesson.Flow.TeacherList)
-                            lesson2TeacherIds.Add(teacher.Id);
-
-                    // Находим пересекающихся преподавателей
-                    var intersectingTeacherId = lesson1TeacherIds.Intersect(lesson2TeacherIds).FirstOrDefault();
-                    if (intersectingTeacherId != 0)
+                    if (!lesson.IsSubWeekLesson || !l.IsSubWeekLesson)
                     {
-                        conflicts.Add(CreateTeacherConflict(otherLesson, version, intersectingTeacherId));
+                        return baseWeekMatches || oppositeWeekMatches;
                     }
 
-                    // Проверяем конфликт по аудитории
-                    if (HasClassroomConflict(lesson, otherLesson))
+                    return baseWeekMatches;
+                });
+
+                foreach (var otherLesson in timeSlotLessons)
+                {
+                    // Пропускаем проверку для занятий в одном потоке
+                    if (lesson.FlowId != null && otherLesson.FlowId != null &&
+                        lesson.FlowId == otherLesson.FlowId)
+                        continue;
+
+                    // Проверяем конфликты преподавателей
+                    var lesson1Teachers = new HashSet<int> { lesson.TeacherId };
+                    var lesson2Teachers = new HashSet<int> { otherLesson.TeacherId };
+
+                    if (lesson.Flow?.TeacherList != null)
+                        lesson1Teachers.UnionWith(lesson.Flow.TeacherList.Select(t => t.Id));
+                    if (otherLesson.Flow?.TeacherList != null)
+                        lesson2Teachers.UnionWith(otherLesson.Flow.TeacherList.Select(t => t.Id));
+
+                    var intersectingTeacherId = lesson1Teachers.Intersect(lesson2Teachers).FirstOrDefault();
+                    if (intersectingTeacherId != 0)
                     {
-                        conflicts.Add(CreateClassroomConflict(otherLesson, version));
+                        conflicts.Add(new MistakeListModel
+                        {
+                            Day = GetDayName(otherLesson.RowIndex!.Value, version),
+                            Para = GetLessonNumber(otherLesson.RowIndex!.Value, version),
+                            MistakeType = "Накладка по преподавателю: ",
+                            MistakeObject = GetTeacherFIO(intersectingTeacherId == otherLesson.TeacherId
+                                ? otherLesson.Teacher
+                                : otherLesson.Flow?.TeacherList?.FirstOrDefault(t => t.Id == intersectingTeacherId)),
+                            StudyClass = otherLesson.StudyClass.Name
+                        });
+                    }
+
+                    // Проверяем конфликты аудиторий
+                    if (lesson.ClassroomId != null && otherLesson.ClassroomId != null &&
+                        lesson.ClassroomId == otherLesson.ClassroomId)
+                    {
+                        conflicts.Add(new MistakeListModel
+                        {
+                            Day = GetDayName(otherLesson.RowIndex!.Value, version),
+                            Para = GetLessonNumber(otherLesson.RowIndex!.Value, version),
+                            MistakeType = "Накладка по аудитории: ",
+                            MistakeObject = otherLesson.Classroom!.Name,
+                            StudyClass = otherLesson.StudyClass.Name
+                        });
                     }
                 }
             }
 
-            return FormatConflicts(conflicts);
-        }
-
-        private bool HasClassroomConflict(Lesson lesson1, Lesson lesson2)
-        {
-            return lesson1.ClassroomId != null &&
-                   lesson2.ClassroomId != null &&
-                   lesson1.ClassroomId == lesson2.ClassroomId;
-        }
-
-        private IEnumerable<Lesson> GetLessonsInTimeSlot(List<Lesson> allLessons, Lesson currentLesson, int secondWeekIndex, bool useSubWeek)
-        {
-            return allLessons.Where(l =>
-            {
-                var currentIndex = currentLesson.RowIndex.Value;
-                var otherIndex = l.RowIndex.Value;
-
-                // Базовый индекс недели (первая или вторая)
-                var baseWeekMatches = currentIndex == otherIndex;
-
-                // Индекс противоположной недели
-                var oppositeWeekMatches = useSubWeek && currentIndex == GetSecondWeekRowIndex(otherIndex);
-
-                // Если хотя бы одно из занятий идет по обеим неделям - проверяем оба индекса
-                if (!currentLesson.IsSubWeekLesson || !l.IsSubWeekLesson)
-                {
-                    return baseWeekMatches || oppositeWeekMatches;
-                }
-
-                // Если оба занятия по одной неделе - проверяем только конкретный индекс
-                return baseWeekMatches;
-            });
-        }
-
-        private int GetSecondWeekRowIndex(int rowIndex) =>
-            rowIndex >= 0 && rowIndex % 2 != 0 ? rowIndex - 1 : rowIndex + 1;
-
-        private MistakeListModel CreateTeacherConflict(Lesson lesson, Version version, int conflictingTeacherId) =>
-            new MistakeListModel
-            {
-                Day = GetDayName(lesson.RowIndex.Value, version),
-                Para = GetLessonNumber(lesson.RowIndex.Value, version),
-                MistakeType = "Накладка по преподавателю: ",
-                MistakeObject = GetTeacherFIO(conflictingTeacherId == lesson.TeacherId
-                    ? lesson.Teacher
-                    : lesson.Flow?.TeacherList?.FirstOrDefault(t => t.Id == conflictingTeacherId)),
-                StudyClass = lesson.StudyClass.Name
-            };
-
-        private MistakeListModel CreateClassroomConflict(Lesson lesson, Version version) =>
-            new MistakeListModel
-            {
-                Day = GetDayName(lesson.RowIndex.Value, version),
-                Para = GetLessonNumber(lesson.RowIndex.Value, version),
-                MistakeType = "Накладка по аудитории: ",
-                MistakeObject = lesson.Classroom.Name,
-                StudyClass = lesson.StudyClass.Name
-            };
-
-        private List<string> FormatConflicts(ConcurrentBag<MistakeListModel> conflicts)
-        {
+            // Форматируем и возвращаем результат
             return conflicts
                 .GroupBy(m => new { m.Day, m.Para, m.MistakeType, m.MistakeObject })
                 .Select(group => new

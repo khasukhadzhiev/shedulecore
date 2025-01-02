@@ -119,17 +119,23 @@ namespace BL.Services
         {
             return allLessons.Where(l =>
             {
-                if (currentLesson.IsSubWeekLesson || l.IsSubWeekLesson)
+                var currentIndex = currentLesson.RowIndex.Value;
+                var otherIndex = l.RowIndex.Value;
+
+                // Базовый индекс недели (первая или вторая)
+                var baseWeekMatches = currentIndex == otherIndex;
+
+                // Индекс противоположной недели
+                var oppositeWeekMatches = useSubWeek && currentIndex == GetSecondWeekRowIndex(otherIndex);
+
+                // Если хотя бы одно из занятий идет по обеим неделям - проверяем оба индекса
+                if (!currentLesson.IsSubWeekLesson || !l.IsSubWeekLesson)
                 {
-                    // Для занятий по одной неделе проверяем только конкретный индекс
-                    return l.RowIndex == currentLesson.RowIndex;
+                    return baseWeekMatches || oppositeWeekMatches;
                 }
-                else
-                {
-                    // Для занятий на обе недели проверяем оба индекса если используются поднедели
-                    return l.RowIndex == currentLesson.RowIndex ||
-                           (useSubWeek && l.RowIndex == secondWeekIndex);
-                }
+
+                // Если оба занятия по одной неделе - проверяем только конкретный индекс
+                return baseWeekMatches;
             });
         }
 

@@ -13,6 +13,7 @@ using Version = DAL.Entities.Version;
 using Infrastructure.Models;
 using DocumentFormat.OpenXml.Bibliography;
 using DTL.Dto.ScheduleDto;
+using DAL.Entities;
 
 namespace BL.Services
 {
@@ -153,196 +154,95 @@ namespace BL.Services
 
         ///<inheritdoc/>
         public async Task<List<string>> GetStudyClassNamesWithMistakesAsync()
+        {
+            // Получаем версию расписания
+            var version = await _context.Versions.FirstAsync(v => v.IsActive);
+
+            // Получаем все занятия с их связями
+            var allLessons = await _context.Lessons
+                .Where(l => l.VersionId == version.Id && l.RowIndex != null)
+                .Include(l => l.Teacher)
+                .Include(l => l.Flow)
+                .Include(l => l.StudyClass)
+                    .ThenInclude(s => s.ClassShift)
+                .Include(l => l.Classroom)
+                .ToListAsync();
+
+            var studyClassesWithConflicts = new HashSet<string>();
+
+            // Группируем занятия по сменам для оптимизации проверки
+            var lessonsByShift = allLessons.GroupBy(l => l.StudyClass.ClassShiftId);
+
+            foreach (var shiftGroup in lessonsByShift)
+            {
+                var shiftLessons = shiftGroup.ToList();
+
+                // Проверяем каждое занятие в смене
+                foreach (var lesson in shiftLessons)
                 {
-                    // 1. Получаем активную версию
-                    var version = await _context.Versions
-                        .Where(v => v.IsActive)
-                        .Select(v => new { v.Id, v.UseSubWeek })
-                        .FirstOrDefaultAsync();
-
-                    if (version == null)
-                        return new List<string>();
-
-                    // 2. Загружаем уроки с информацией о потоках
-                    var lessons = await _context.Lessons
-                        .Where(l => l.VersionId == version.Id && l.RowIndex != null)
-                        .Select(l => new
-                        {
-                            l.Id,
-                            l.RowIndex,
-                            l.ColIndex,
-                            l.TeacherId,
-                            l.ClassroomId,
-                            l.StudyClassId,
-                            l.IsSubWeekLesson,
-                            l.IsSubClassLesson,
-                            l.FlowId,
-                            Flow = l.Flow, // Теперь включаем информацию о потоке
-                            ClassShiftId = l.StudyClass.ClassShiftId,
-                            StudyClassName = l.StudyClass.Name
-                        })
-                        .ToListAsync();
-
-                    if (!lessons.Any())
-                        return new List<string>();
-
-                    // 3. Создаем вспомогательный класс для хранения информации об уроке
-                    var lessonInfos = lessons.Select(l =>
+                    // Получаем все занятия в том же временном слоте
+                    var timeSlotLessons = shiftLessons.Where(l =>
                     {
-                        var rowIndexSecond = (l.RowIndex >= 0 && l.RowIndex % 2 != 0)
-                            ? l.RowIndex - 1
-                            : l.RowIndex + 1;
+                        if (l.Id == lesson.Id) return false;
 
-                        var possibleRowIndexes = new List<int?>();
+                        var currentIndex = lesson.RowIndex!.Value;
+                        var otherIndex = l.RowIndex!.Value;
+                        var secondWeekIndex = otherIndex >= 0 && otherIndex % 2 != 0 ? otherIndex - 1 : otherIndex + 1;
 
-                        if (!l.IsSubClassLesson && !l.IsSubWeekLesson)
+                        // Проверяем совпадение по времени с учетом подгрупп
+                        var baseWeekMatches = currentIndex == otherIndex;
+                        var oppositeWeekMatches = version.UseSubWeek && currentIndex == secondWeekIndex;
+
+                        if (!lesson.IsSubWeekLesson || !l.IsSubWeekLesson)
                         {
-                            possibleRowIndexes.Add(l.RowIndex);
-                            if (version.UseSubWeek)
-                                possibleRowIndexes.Add(rowIndexSecond);
-                        }
-                        else if (!l.IsSubClassLesson && l.IsSubWeekLesson)
-                        {
-                            possibleRowIndexes.Add(l.RowIndex);
-                            possibleRowIndexes.Add(rowIndexSecond);
-                        }
-                        else if (l.IsSubClassLesson && !l.IsSubWeekLesson)
-                        {
-                            possibleRowIndexes.Add(l.RowIndex);
-                            if (version.UseSubWeek)
-                                possibleRowIndexes.Add(rowIndexSecond);
-                        }
-                        else
-                        {
-                            possibleRowIndexes.Add(l.RowIndex);
+                            return baseWeekMatches || oppositeWeekMatches;
                         }
 
-                        return new
-                        {
-                            LessonId = l.Id,
-                            TeacherId = l.TeacherId,
-                            ClassroomId = l.ClassroomId,
-                            StudyClassId = l.StudyClassId,
-                            ColIndex = l.ColIndex,
-                            ClassShiftId = l.ClassShiftId,
-                            FlowId = l.FlowId,
-                            Flow = l.Flow,
-                            StudyClassName = l.StudyClassName,
-                            PossibleRowIndexes = possibleRowIndexes.Distinct().ToList()
-                        };
-                    }).ToList();
+                        return baseWeekMatches;
+                    });
 
-                    // 4. Группировка по сменам и строкам
-                    var grouped = new Dictionary<(int ClassShiftId, int? RowIndex), List<(
-                        int LessonId,
-                        int? TeacherId,
-                        int? ClassroomId,
-                        int? StudyClassId,
-                        int? ColIndex,
-                        long? FlowId,
-                        Flow Flow,
-                        string Name)>>();
-
-                    foreach (var info in lessonInfos)
+                    foreach (var otherLesson in timeSlotLessons)
                     {
-                        foreach (var rIndex in info.PossibleRowIndexes)
+                        // Пропускаем проверку для занятий в одном потоке
+                        if (lesson.FlowId != null && otherLesson.FlowId != null &&
+                            lesson.FlowId == otherLesson.FlowId)
+                            continue;
+
+                        bool hasConflict = false;
+
+                        // Проверяем конфликты преподавателей
+                        var lesson1Teachers = new HashSet<int> { lesson.TeacherId };
+                        var lesson2Teachers = new HashSet<int> { otherLesson.TeacherId };
+
+                        if (lesson.Flow?.TeacherList != null)
+                            lesson1Teachers.UnionWith(lesson.Flow.TeacherList.Select(t => t.Id));
+                        if (otherLesson.Flow?.TeacherList != null)
+                            lesson2Teachers.UnionWith(otherLesson.Flow.TeacherList.Select(t => t.Id));
+
+                        if (lesson1Teachers.Intersect(lesson2Teachers).Any())
                         {
-                            if (!grouped.TryGetValue((info.ClassShiftId, rIndex), out var list))
-                            {
-                                list = new List<(int, int?, int?, int?, int?, long?, Flow, string)>();
-                                grouped[(info.ClassShiftId, rIndex)] = list;
-                            }
-                            list.Add((info.LessonId, info.TeacherId, info.ClassroomId, info.StudyClassId,
-                                     info.ColIndex, info.FlowId, info.Flow, info.StudyClassName));
+                            hasConflict = true;
+                        }
+
+                        // Проверяем конфликты аудиторий
+                        if (lesson.ClassroomId != null && otherLesson.ClassroomId != null &&
+                            lesson.ClassroomId == otherLesson.ClassroomId)
+                        {
+                            hasConflict = true;
+                        }
+
+                        if (hasConflict)
+                        {
+                            studyClassesWithConflicts.Add(lesson.StudyClass.Name);
+                            studyClassesWithConflicts.Add(otherLesson.StudyClass.Name);
                         }
                     }
-
-                    var mistakenStudyClasses = new HashSet<string>();
-
-                    // 5. Проверка конфликтов с учетом потоков
-                    foreach (var kvp in grouped)
-                    {
-                        var bucket = kvp.Value;
-                        if (bucket.Count <= 1) continue;
-
-                        for (int i = 0; i < bucket.Count; i++)
-                        {
-                            var lA = bucket[i];
-                            for (int j = i + 1; j < bucket.Count; j++)
-                            {
-                                var lB = bucket[j];
-
-                                // Если уроки в одном потоке - пропускаем проверку
-                                if (lA.FlowId.HasValue && lB.FlowId.HasValue && lA.FlowId == lB.FlowId)
-                                    continue;
-
-                                bool hasConflict = false;
-
-                                // Проверка конфликта по преподавателю
-                                if (lA.TeacherId.HasValue && lB.TeacherId.HasValue)
-                                {
-                                    // Проверяем основного преподавателя
-                                    if (lA.TeacherId == lB.TeacherId)
-                                    {
-                                        hasConflict = true;
-                                    }
-                                    // Проверяем преподавателей из потока
-                                    else if (lA.Flow?.TeacherList != null && lB.Flow?.TeacherList != null)
-                                    {
-                                        var teachersA = lA.Flow.TeacherList;
-                                        var teachersB = lB.Flow.TeacherList;
-
-                                        if (teachersA.Any(t => t.Id == lB.TeacherId) ||
-                                            teachersB.Any(t => t.Id == lA.TeacherId) ||
-                                            teachersA.Any(ta => teachersB.Any(tb => ta.Id == tb.Id)))
-                                        {
-                                            hasConflict = true;
-                                        }
-                                    }
-                                }
-
-                                // Проверка конфликта по учебному классу и ColIndex
-                                if (!hasConflict && lA.StudyClassId.HasValue && lB.StudyClassId.HasValue &&
-                                    lA.ColIndex == lB.ColIndex)
-                                {
-                                    // Проверяем основной класс
-                                    if (lA.StudyClassId == lB.StudyClassId)
-                                    {
-                                        hasConflict = true;
-                                    }
-                                    // Проверяем классы из потока
-                                    else if (lA.Flow?.StudyClassList != null && lB.Flow?.StudyClassList != null)
-                                    {
-                                        var classesA = lA.Flow.StudyClassList;
-                                        var classesB = lB.Flow.StudyClassList;
-
-                                        if (classesA.Any(c => c.Id == lB.StudyClassId) ||
-                                            classesB.Any(c => c.Id == lA.StudyClassId) ||
-                                            classesA.Any(ca => classesB.Any(cb => ca.Id == cb.Id)))
-                                        {
-                                            hasConflict = true;
-                                        }
-                                    }
-                                }
-
-                                // Проверка конфликта по кабинету
-                                if (!hasConflict && lA.ClassroomId.HasValue && lB.ClassroomId.HasValue &&
-                                    lA.ClassroomId == lB.ClassroomId)
-                                {
-                                    hasConflict = true;
-                                }
-
-                                if (hasConflict)
-                                {
-                                    mistakenStudyClasses.Add(lA.Name);
-                                    mistakenStudyClasses.Add(lB.Name);
-                                }
-                            }
-                        }
-                    }
-
-                    return mistakenStudyClasses.OrderBy(x => x).ToList();
                 }
+            }
+
+            // Возвращаем отсортированный список групп с накладками
+            return studyClassesWithConflicts.OrderBy(name => name).ToList();
+        }
 
         private string GetTeacherFIO(Teacher teacher)
         {

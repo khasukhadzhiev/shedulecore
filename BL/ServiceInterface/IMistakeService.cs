@@ -14,7 +14,7 @@ namespace BL.ServiceInterface
         Task<List<string>> GetMistakesByStudyClassAsync(int studyClassId, int versionId);
 
         /// <summary>
-        /// Получить 
+        /// Получить список названий групп, в которых есть накладки
         /// </summary>
         /// <returns></returns>
         Task<List<string>> GetStudyClassNamesWithMistakesAsync();

@@ -671,181 +671,184 @@ namespace BL.Services
         {
             Parallel.ForEach(lessonsArr, (lessons) =>
             {
+                // Сбрасываем веса для всех занятий
+                Parallel.ForEach(lessons, lesson => lesson.Weight = 0);
+
+                // Проверяем конфликты для каждого занятия
                 Parallel.ForEach(lessons, (lesson) =>
                 {
-                    var rowIndexSecond = lesson.RowIndex >= 0 && lesson.RowIndex % 2 != 0 ? lesson.RowIndex - 1 : lesson.RowIndex + 1;
-
-                    var conditionTeacherString = new StringBuilder();
-
-                    if (!lesson.IsSubClassLesson && !lesson.IsSubWeekLesson)//Целая группа
+                    // Получаем все занятия в том же временном слоте
+                    var timeSlotLessons = lessons.Where(l =>
                     {
-                        if (version.UseSubWeek)
+                        if (l.Id == lesson.Id) return false;
+
+                        var currentIndex = lesson.RowIndex!.Value;
+                        var otherIndex = l.RowIndex!.Value;
+                        var secondWeekIndex = otherIndex >= 0 && otherIndex % 2 != 0 ? otherIndex - 1 : otherIndex + 1;
+
+                        // Проверяем совпадение по времени с учетом подгрупп
+                        var baseWeekMatches = currentIndex == otherIndex;
+                        var oppositeWeekMatches = version.UseSubWeek && currentIndex == secondWeekIndex;
+
+                        if (!lesson.IsSubWeekLesson || !l.IsSubWeekLesson)
                         {
-                            conditionTeacherString.Append($"(RowIndex == {lesson.RowIndex} || RowIndex == {rowIndexSecond})");
+                            return baseWeekMatches || oppositeWeekMatches;
                         }
-                        else
+
+                        return baseWeekMatches;
+                    });
+
+                    foreach (var otherLesson in timeSlotLessons)
+                    {
+                        // Пропускаем проверку для занятий в одном потоке
+                        if (lesson.FlowId != null && otherLesson.FlowId != null &&
+                            lesson.FlowId == otherLesson.FlowId)
+                            continue;
+
+                        // Проверяем накладки по преподавателю
+                        if (lesson.TeacherId == otherLesson.TeacherId)
                         {
-                            conditionTeacherString.Append($"(RowIndex == {lesson.RowIndex})");
+                            lesson.Weight += 1;
+                            otherLesson.Weight += 1;
+
+                            if (!_generateScheduleProgress.MistakeType.Contains("Накладки"))
+                            {
+                                _generateScheduleProgress.MistakeType.Add("Накладки");
+                            }
                         }
 
-                        conditionTeacherString.Append($" AND (((FlowId != null || {lesson.FlowId != null}) AND FlowId != {lesson.FlowId ?? -1}) || (FlowId == null AND {lesson.FlowId == null}))");
-                        conditionTeacherString.Append($" AND (TeacherId == {lesson.TeacherId} || StudyClassId == {lesson.StudyClassId})");
-                    }
-                    else if (!lesson.IsSubClassLesson && lesson.IsSubWeekLesson)//Целая группа по одной неделе
-                    {
-                        conditionTeacherString.Append($"(RowIndex == {lesson.RowIndex} || (IsSubWeekLesson == {false} && RowIndex == {rowIndexSecond}))");
-                        conditionTeacherString.Append($" AND (((FlowId != null || {lesson.FlowId != null}) AND FlowId != {lesson.FlowId ?? -1}) || (FlowId == null AND {lesson.FlowId == null}))");
-                        conditionTeacherString.Append($" AND (TeacherId == {lesson.TeacherId} || StudyClassId == {lesson.StudyClassId})");
-                    }
-                    else if (lesson.IsSubClassLesson && !lesson.IsSubWeekLesson)//Подгруппа в каждую неделю
-                    {
-                        if (version.UseSubWeek)
+                        // Проверяем накладки по аудитории
+                        if (lesson.ClassroomId != null && otherLesson.ClassroomId != null &&
+                            lesson.ClassroomId == otherLesson.ClassroomId)
                         {
-                            conditionTeacherString.Append($"((RowIndex == {lesson.RowIndex} || RowIndex == {rowIndexSecond}) AND (ColIndex == {lesson.ColIndex}) AND (StudyClassId == {lesson.StudyClassId}))");
-                            conditionTeacherString.Append($" || ((RowIndex == {lesson.RowIndex} || RowIndex == {rowIndexSecond}) AND (TeacherId == {lesson.TeacherId}))");
+                            lesson.Weight += 1;
+                            otherLesson.Weight += 1;
+
+                            if (!_generateScheduleProgress.MistakeType.Contains("Накладки"))
+                            {
+                                _generateScheduleProgress.MistakeType.Add("Накладки");
+                            }
                         }
-                        else
+
+                        // Проверяем накладки по группе для не подгрупповых занятий
+                        if (!lesson.IsSubClassLesson && !otherLesson.IsSubClassLesson &&
+                            lesson.StudyClassId == otherLesson.StudyClassId)
                         {
-                            conditionTeacherString.Append($"((RowIndex == {lesson.RowIndex}) AND (ColIndex == {lesson.ColIndex}) AND (StudyClassId == {lesson.StudyClassId}))");
-                            conditionTeacherString.Append($" || ((RowIndex == {lesson.RowIndex}) AND (TeacherId == {lesson.TeacherId}))");
+                            lesson.Weight += 1;
+                            otherLesson.Weight += 1;
+
+                            if (!_generateScheduleProgress.MistakeType.Contains("Накладки"))
+                            {
+                                _generateScheduleProgress.MistakeType.Add("Накладки");
+                            }
                         }
-                    }
-                    else//Подгруппа по одной неделе
-                    {
-                        conditionTeacherString.Append($"((RowIndex == {lesson.RowIndex} || (IsSubWeekLesson == {false} && RowIndex == {rowIndexSecond})) AND (TeacherId == {lesson.TeacherId}))");
-                        conditionTeacherString.Append($" || (RowIndex == {lesson.RowIndex} AND ColIndex == {lesson.ColIndex} AND (StudyClassId == {lesson.StudyClassId} || TeacherId == {lesson.TeacherId}))");
-                    }
 
-                    var mistakeLessonList = lessons.AsQueryable()
-                        .Where(conditionTeacherString.ToString())
-                        .Where(l => l.Id != lesson.Id
-                            && l.StudyClass.ClassShiftId == lesson.StudyClass.ClassShiftId
-                            && l.VersionId == version.Id
-                        ).ToList();
-
-                    foreach (var item in mistakeLessonList)
-                    {
-                        item.Weight += 1;
-                    }
-
-                    lesson.Weight = mistakeLessonList.Count;
-
-                    if (lesson.Weight > 0)
-                    {
-                        if (!_generateScheduleProgress.MistakeType.Contains("Накладки"))
+                        // Проверяем накладки по подгруппам
+                        if (lesson.IsSubClassLesson && otherLesson.IsSubClassLesson &&
+                            lesson.StudyClassId == otherLesson.StudyClassId &&
+                            lesson.ColIndex == otherLesson.ColIndex)
                         {
-                            _generateScheduleProgress.MistakeType.Add("Накладки");
+                            lesson.Weight += 1;
+                            otherLesson.Weight += 1;
+
+                            if (!_generateScheduleProgress.MistakeType.Contains("Накладки"))
+                            {
+                                _generateScheduleProgress.MistakeType.Add("Накладки");
+                            }
                         }
                     }
+                });
 
-                    if (!geneticAlgorithmDataDto.AllowEmptyLesson)
+                if (!geneticAlgorithmDataDto.AllowEmptyLesson)
+                {
+                    // Проверка на одиночные пары в день
+                    Parallel.ForEach(StudyClassList, studyClass =>
                     {
-                        //Проверка на одиночные пары в день
-                        var singleLessons = lessons
-                            .Where(l => l.StudyClassId == lesson.StudyClassId)
+                        var studyClassLessons = lessons
+                            .Where(l => l.StudyClassId == studyClass.Id)
                             .GroupBy(l => l.LessonDay)
                             .Where(g => g.Count() < 2)
                             .SelectMany(g => g)
-                            .ToList();
+                            .Where(l => l.FlowId == null);
 
-                        foreach (var item in singleLessons)
+                        foreach (var lesson in studyClassLessons)
                         {
-                            if (item.FlowId != null)
-                            {
-                                continue;
-                            }
-
-                            item.Weight += 1;
+                            lesson.Weight += 1;
 
                             if (!_generateScheduleProgress.MistakeType.Contains("Одиночные пары в день"))
                             {
                                 _generateScheduleProgress.MistakeType.Add("Одиночные пары в день");
                             }
                         }
-                    }
+                    });
 
-                });
-
-                //Проверка на одиночные пары подгрупп
-                if (version.UseSubClass && lessons.Any(l => l.IsSubClassLesson) && !geneticAlgorithmDataDto.AllowEmptyLesson)
-                {
-                    Parallel.ForEach(StudyClassList, studyClass =>
+                    // Проверка на одиночные пары подгрупп
+                    if (version.UseSubClass)
                     {
-                        var subClassLessonCount = lessons
-                            .Where(l => l.IsSubClassLesson && l.StudyClassId == studyClass.Id).Count();
-
-                        if (subClassLessonCount % 2 == 0)
+                        Parallel.ForEach(StudyClassList, studyClass =>
                         {
-                            var subClassLessons = lessons
+                            var subClassLessonCount = lessons
+                                .Count(l => l.IsSubClassLesson && l.StudyClassId == studyClass.Id);
+
+                            if (subClassLessonCount % 2 == 0)
+                            {
+                                var subClassLessons = lessons
                                     .Where(l => l.IsSubClassLesson && l.StudyClassId == studyClass.Id)
                                     .GroupBy(l => l.RowIndex)
                                     .Where(g => g.Count() < 2)
-                                    .SelectMany(g => g)
-                                    .ToList();
+                                    .SelectMany(g => g);
 
-                            foreach (var item in subClassLessons)
-                            {
-                                item.Weight += 1;
-
-                                if (!_generateScheduleProgress.MistakeType.Contains("Одиночные пары подгрупп"))
+                                foreach (var lesson in subClassLessons)
                                 {
-                                    _generateScheduleProgress.MistakeType.Add("Одиночные пары подгрупп");
+                                    lesson.Weight += 1;
+
+                                    if (!_generateScheduleProgress.MistakeType.Contains("Одиночные пары подгрупп"))
+                                    {
+                                        _generateScheduleProgress.MistakeType.Add("Одиночные пары подгрупп");
+                                    }
                                 }
                             }
-                        }
-                        else
-                        {
-                            _generateScheduleProgress.Start = false;
-                            _generateScheduleProgress.SaveWithMistakes = false;
-                            _generateScheduleProgress.End = true;
+                            else
+                            {
+                                throw new Exception($"Невозможно создать расписание для {studyClass.Name}. Нечетное количество занятий по подгруппам.");
+                            }
+                        });
+                    }
 
-                            throw new Exception($"Невозможно создать расписание для {studyClass.Name}. Нечетное количество занятий по подгруппам.");
-                        }
-                    });
-                }
-
-                //Условие допуска окон в расписании
-                if (!geneticAlgorithmDataDto.AllowEmptyLesson)
-                {
-                    foreach (var studyClass in StudyClassList)
+                    // Проверка на окна в расписании
+                    Parallel.ForEach(StudyClassList, studyClass =>
                     {
                         var studyClassLessons = lessons
                             .Where(l => l.StudyClassId == studyClass.Id);
 
                         int lessonDaysCount = version.UseSubWeek ? 7 : 6;
 
-                        for (int i = 0; i < lessonDaysCount; i++)
+                        for (int day = 0; day < lessonDaysCount; day++)
                         {
-                            var lessonListByDay = studyClassLessons.Where(l => l.LessonDay == i).OrderBy(l => l.RowIndex).ToArray();
+                            var lessonListByDay = studyClassLessons
+                                .Where(l => l.LessonDay == day)
+                                .OrderBy(l => l.RowIndex)
+                                .ToArray();
 
                             for (int j = lessonListByDay.Length - 1; j >= 1 && lessonListByDay.Length < 4; j--)
                             {
                                 var indexDifference = lessonListByDay[j].LessonNumber - lessonListByDay[j - 1].LessonNumber;
 
-                                if (indexDifference.Value > 0)
+                                if (indexDifference > 1 && lessonListByDay[j].FlowId == null)
                                 {
-                                    if (lessonListByDay[j].FlowId == null)
+                                    lessonListByDay[j].RowIndex = version.UseSubWeek ?
+                                        lessonListByDay[j - 1].RowIndex + 2 :
+                                        lessonListByDay[j - 1].RowIndex + 1;
+
+                                    if (!_generateScheduleProgress.MistakeType.Contains("Окна"))
                                     {
-                                        //if (_generateScheduleProgress.MistakeType.Contains("Накладки"))
-                                        //{
-                                        lessonListByDay[j].RowIndex = version.UseSubWeek ? lessonListByDay[j - 1].RowIndex + 2 : lessonListByDay[j - 1].RowIndex + 1;
-                                        //}
-                                        //else
-                                        //{
-                                        //    lessonListByDay[j].Weight = 1;
-                                        //}
-
-                                        if (!_generateScheduleProgress.MistakeType.Contains("Окна"))
-                                        {
-                                            _generateScheduleProgress.MistakeType.Add("Окна");
-                                        }
-
-                                        break;
+                                        _generateScheduleProgress.MistakeType.Add("Окна");
                                     }
+                                    break;
                                 }
                             }
                         }
-                    }
+                    });
                 }
             });
         }

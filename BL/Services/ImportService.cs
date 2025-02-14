@@ -259,7 +259,7 @@ namespace BL.Services
                     {
                         var educationForm = await _context.EducationForms.FirstOrDefaultAsync(e => e.Name == studyClass.FirstOrDefault().EducationForm);
 
-                        var classShift = await _context.ClassShifts.FirstOrDefaultAsync(e => e.Name == studyClass.FirstOrDefault().ClassShift); //TODO classShift и subdivision пустые при импорте. Надо понять почему.
+                        var classShift = await _context.ClassShifts.FirstOrDefaultAsync(e => e.Name == studyClass.FirstOrDefault().ClassShift);
 
                         var subdivision = await _context.Subdivisions.FirstOrDefaultAsync(e => e.Name == studyClass.FirstOrDefault().Subdivision);
 
@@ -379,7 +379,6 @@ namespace BL.Services
             }
         }
 
-        //TODO Аудитории с корпусами не импортируются правильно. Проверить.
         public async Task ImportClassroomListAsync(IFormFile file, int versionId)
         {
             if (_importProgres.InProcess)

@@ -38,7 +38,8 @@ namespace BL.Services
             var classroomList = await _context.Classrooms
                 .AsNoTracking()
                 .Include(c => c.Building)
-                .OrderBy(s => s.Name)
+                .OrderBy(c=>c.Building.Name)
+                    .ThenBy(c => c.Name)
                 .Select(s => s.ToClassroomDto())                
                 .ToListAsync();
 

@@ -379,6 +379,7 @@ namespace BL.Services
             }
         }
 
+        //TODO Аудитории с корпусами не импортируются правильно. Проверить.
         public async Task ImportClassroomListAsync(IFormFile file, int versionId)
         {
             if (_importProgres.InProcess)
@@ -474,7 +475,7 @@ namespace BL.Services
 
                     foreach (var row in dataList)
                     {
-                        var building = await _context.ClassroomTypes.FirstOrDefaultAsync(e => e.Name == row.ClassroomType.Trim().ToUpper());
+                        var building = await _context.Building.FirstOrDefaultAsync(e => e.Name == row.BuildingName.Trim().ToUpper());
 
                         var classtoomType = await _context.ClassroomTypes.FirstOrDefaultAsync(s => s.Name == row.ClassroomType.Trim().ToUpper());
 

@@ -387,6 +387,21 @@ namespace BL.Services
         }
 
         ///<inheritdoc/>
+        public async Task CloneMainLessonAsync(LessonDto lessonDto, int versionId)
+        {
+            var newLessonDto = new LessonDto();
+
+            newLessonDto.LessonTypeId = lessonDto.LessonTypeId;
+            newLessonDto.SubjectId = lessonDto.SubjectId;
+            newLessonDto.TeacherId = lessonDto.TeacherId;
+            newLessonDto.IsSubClassLesson = lessonDto.IsSubClassLesson;
+            newLessonDto.IsSubWeekLesson= lessonDto.IsSubWeekLesson;
+            newLessonDto.StudyClassId = lessonDto.StudyClassId;
+
+            await AddMainLessonAsync(newLessonDto, versionId);
+        }
+
+        ///<inheritdoc/>
         public async Task EditLessonDataAsync(LessonDto lessonDto, int versionId)
         {
             var lesson = await _context.Lessons.Include(l =>l.Subject).Include(l=> l.Teacher).FirstOrDefaultAsync(l => l.Id == lessonDto.Id);

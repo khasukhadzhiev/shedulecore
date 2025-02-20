@@ -127,6 +127,15 @@ namespace CoreAPI.Controllers
             return Ok();
         }
 
+        [HttpPost]
+        [Route("CloneMainLesson")]
+        public async Task<IActionResult> CloneLesson(LessonDto lessonDto, int versionId)
+        {
+            await _lessonService.CloneMainLessonAsync(lessonDto, versionId);
+
+            return Ok();
+        }
+
         [HttpGet]
         [Route("GetMainLessonFilterList")]
         public async Task<IActionResult> GetMainLessonFilterList(int studyClassId, int versionId, string filter)

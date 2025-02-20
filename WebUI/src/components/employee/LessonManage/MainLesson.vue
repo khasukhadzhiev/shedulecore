@@ -171,6 +171,12 @@
           </span>
       </template>
 
+      <template v-slot:cell(clone)="row" style="width:50px">
+          <span class="btn" @click="cloneMainLesson(row.item)">
+            <b-icon icon="plus" scale="1"></b-icon>
+          </span>
+      </template>
+
       <template v-slot:cell(remove)="data" style="width:50px">
         <span class="btn" @click="removeLesson(data.item.id)">
           <b-icon-trash variant="danger"></b-icon-trash>
@@ -188,7 +194,8 @@ import {
   RemoveLesson,
   EditLessonData,
   LessonSet,
-  DiscriptLessonDayAndNumber
+  DiscriptLessonDayAndNumber,
+  CloneMainLesson
 } from "../../../service/lessonService";
 
 export default {
@@ -216,6 +223,7 @@ export default {
         { key: "isSubClassLesson", label: "Полнота" },
         { key: "isSubWeekLesson", label: "Неделя", sortable: true },
         { key: "removeFromTimetable", label: "Положение" },
+        { key: "clone", label: ""},
         { key: "remove", label: "" }
       ]
     };
@@ -258,6 +266,32 @@ export default {
               })
               .catch((error) => {
                 this.$ntf.Error("Неудалось сбросить положение занятия.", error);
+              });
+          }
+        });
+    },
+    cloneMainLesson(lesson){
+      this.$bvModal
+        .msgBoxConfirm("Вы уверены, что хотите клонировать занятие?", {
+          title: "Клонирование занятия",
+          size: "sm",
+          buttonSize: "sm",
+          okVariant: "danger",
+          okTitle: "ДА",
+          cancelTitle: "НЕТ",
+          footerClass: "p-2",
+          hideHeaderClose: false,
+          centered: true
+        })
+        .then(value => {
+          if (value) {
+            CloneMainLesson(lesson, this.version.id)
+              .then(() => {
+                this.$ntf.Success("Положение занятия сброшено!");
+                this.getMainLessonList(this.studyClass.id, this.version.id);
+              })
+              .catch((error) => {
+                this.$ntf.Error("Неудалось клонировать занятие.", error);
               });
           }
         });

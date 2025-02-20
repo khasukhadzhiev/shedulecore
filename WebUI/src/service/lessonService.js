@@ -274,3 +274,19 @@ export function DiscriptLessonDayAndNumber(lessonDay, lessonNumber){
     return dayLabels[lessonDay]+ ", " + lessonNumberLabels[lessonNumber] + " пара"
   }
 }
+
+export function CloneMainLesson(lesson, versionId) {
+  const url = 'Lesson/CloneMainLesson';
+  return new Promise((resolve, reject) => {
+    timetableAPI.post(url, lesson, {
+      params: {
+        versionId: versionId
+      }
+    })
+      .then(response => {
+        return resolve(response);
+      }).catch(error => {
+        return reject(error);
+      });
+  });
+}

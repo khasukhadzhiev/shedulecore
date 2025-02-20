@@ -88,6 +88,16 @@ namespace BL.ServiceInterface
         /// <returns></returns>
         Task EditLessonDataAsync(LessonDto lesson, int versionId);
 
+        /// <summary>
+        /// Обновить дисциплину и преподавателя занятия
+        /// </summary>
+        /// <param name="lesson">Занятие</param>
+        /// <param name="versionId">Id версии расписания</param>
+        /// <returns></returns>
+        Task CloneMainLessonAsync(LessonDto lesson, int versionId);
+
+        
+
         #region Filtering lesson
 
         /// <summary>

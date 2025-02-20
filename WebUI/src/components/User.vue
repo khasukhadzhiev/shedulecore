@@ -24,6 +24,15 @@
       <div class="col text-left">
         <b-button
           type="button"
+          class="mr-2"
+          variant="outline-primary"
+          v-if="queryTimetable.length > 0 || queryList.length > 0"
+          @click="getTimetable()"
+          >Обновить</b-button
+        >
+
+        <b-button
+          type="button"
           variant="outline-danger"
           v-if="queryTimetable.length > 0 || queryList.length > 0"
           @click="clearTimetable()"
@@ -45,6 +54,10 @@
         </b-form-checkbox>
       </div>
     </div>
+    <template class="text-center" v-if="isLoading">
+      <b-spinner variant="primary" label="Text Centered"></b-spinner>
+      <strong>Загрузка...</strong>
+    </template>
     <template
       v-if="queryTimetable.length > 0 && !showReporting"
       id="timetable-panel"
@@ -287,10 +300,6 @@
         </tr>
       </table>
     </template>
-    <template class="text-center" v-if="isLoading">
-      <b-spinner variant="primary" label="Text Centered"></b-spinner>
-      <strong>Загрузка...</strong>
-    </template>
     <template class="text-center" v-if="timetableIsEmpty">
       <strong>Указанный Преподаватель или Группа не найдены!</strong>
     </template>
@@ -444,8 +453,24 @@ export default {
     },
 
     clearTimetable() {
-      this.queryTimetable = [];
-      this.queryList = [];
+      this.$bvModal
+        .msgBoxConfirm("Вы уверены, что хотите сбросить запрос?", {
+          title: "Очистика",
+          size: "sm",
+          buttonSize: "sm",
+          okVariant: "danger",
+          okTitle: "ДА",
+          cancelTitle: "НЕТ",
+          footerClass: "p-2",
+          hideHeaderClose: false,
+          centered: true
+        })
+        .then(value => {
+          if (value) {
+            this.queryTimetable = [];
+            this.queryList = [];
+          }
+        });
     },
 
     saveTimetableToPdf() {

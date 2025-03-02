@@ -11,7 +11,7 @@ export const timetableAPI = axios.create({
 timetableAPI.interceptors.response.use(undefined, (error) => {
   if (error.response && (error.response.status === 401 || error.response.status === 403)) {
     Logout();
-    router.push({ name: "login"});
+    router.push({ name: "user"});
   }
   return Promise.reject(error.response.data);
 });

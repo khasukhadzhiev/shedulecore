@@ -7,7 +7,7 @@
     </div>
 
     <div class="row mt-4 mb-4">
-      <div class="col-5">
+      <div class="col-12 col-md-7">
         <multiselect
           v-model="queryList"
           :options="optionList"
@@ -21,7 +21,7 @@
           <template slot="noOptions">Список пуст!</template>
         </multiselect>
       </div>
-      <div class="col text-left">
+      <div class="col text-left mt-2 mt-md-0">
         <b-button
           type="button"
           class="mr-2"

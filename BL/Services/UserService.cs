@@ -59,8 +59,7 @@ namespace BL.Services
                     .Include(s => s.EducationForm)
                     .Include(s => s.ClassShift)
                     .Include(s => s.Subdivision)
-                    .FirstOrDefaultAsync(t => t.Name.Replace(" ", "")
-                    .Contains(query.Replace(" ", "").Trim().ToUpper()));
+                    .FirstOrDefaultAsync(t => t.Name.Replace(" ", "") == query.Replace(" ", "").Trim().ToUpper());
 
                 var teacher = await _context.Teachers
                     .FirstOrDefaultAsync(t => (t.FirstName + " " + t.Name + " " + t.MiddleName)
